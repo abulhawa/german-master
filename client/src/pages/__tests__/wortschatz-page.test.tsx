@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 
 import { ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
 import type { WortschatzWord } from '@shared';
+import type { WortschatzHistorySummary } from '@/lib/wortschatz';
 
 import { renderWortschatzPage, setupHomeNavigationTest } from './home-navigation/utils';
 
@@ -66,7 +67,20 @@ function requestToUrl(input: RequestInfo | URL): string {
   return (input as Request).url;
 }
 
-function installWortschatzFetch(words: WortschatzWord[], datasetVersion: string = ANDROID_B2_BERUF_VERSION) {
+const EMPTY_HISTORY_SUMMARY: WortschatzHistorySummary = {
+  totalAttempts: 0,
+  correctAttempts: 0,
+  incorrectAttempts: 0,
+  practicedWordIds: [],
+  correctWordIds: [],
+  byWordId: {},
+};
+
+function installWortschatzFetch(
+  words: WortschatzWord[],
+  datasetVersion: string = ANDROID_B2_BERUF_VERSION,
+  historySummary: WortschatzHistorySummary = EMPTY_HISTORY_SUMMARY,
+) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = requestToUrl(input);
     if (url.includes('/api/wortschatz/words')) {
@@ -75,6 +89,15 @@ function installWortschatzFetch(words: WortschatzWord[], datasetVersion: string 
         headers: {
           'Content-Type': 'application/json',
           'X-Wortschatz-Dataset-Version': datasetVersion,
+        },
+      });
+    }
+
+    if (url.includes('/api/wortschatz/history-summary')) {
+      return new Response(JSON.stringify(historySummary), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
     }
@@ -206,6 +229,28 @@ describe('Wortschatz page', () => {
     expect(await screen.findByText('Tap to reveal')).toBeInTheDocument();
   });
 
+  it('shows historical database totals instead of local drill session counters', async () => {
+    installWortschatzFetch(FIXTURE_WORDS.slice(0, 2), ANDROID_B2_BERUF_VERSION, {
+      totalAttempts: 5,
+      correctAttempts: 3,
+      incorrectAttempts: 2,
+      practicedWordIds: [1, 2],
+      correctWordIds: [1],
+      byWordId: {
+        '1': { attempts: 3, correct: 2, incorrect: 1 },
+        '2': { attempts: 2, correct: 1, incorrect: 1 },
+      },
+    });
+
+    renderWortschatzPage();
+
+    expect(await screen.findByText('Tap to reveal')).toBeInTheDocument();
+    expect(screen.getByText('Practiced')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText(/2\/2 words/)).toBeInTheDocument();
+  });
+
   it('ignores pointer drags after reveal so text selection does not answer the card', async () => {
     const fetchMock = installWortschatzFetch([FIXTURE_WORDS[0]!]);
 
@@ -225,7 +270,7 @@ describe('Wortschatz page', () => {
     expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/api/submission'), expect.anything());
   });
 
-  it('restores local tab/search/filter/drill mastery and resets mastery when the dataset changes', async () => {
+  it('restores local tab/search/filter state while keeping progress database-backed', async () => {
     const user = userEvent.setup();
 
     installWortschatzFetch([FIXTURE_WORDS[0]!], 'wortschatz-v1');
@@ -245,7 +290,7 @@ describe('Wortschatz page', () => {
     expect(await screen.findByDisplayValue('vertrag')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Wortliste' })).toHaveAttribute('aria-selected', 'true');
     await user.click(screen.getByRole('tab', { name: 'Schnell-Drill' }));
-    expect(await screen.findByText(/1\/1 words/)).toBeInTheDocument();
+    expect(await screen.findByText(/0\/1 words/)).toBeInTheDocument();
 
     secondRender.unmount();
 

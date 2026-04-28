@@ -499,13 +499,13 @@ const MESSAGES: Record<Locale, AppMessages> = {
         reset: 'Reset filters',
       },
       metrics: {
-        mastered: 'Mastered',
+        mastered: 'Practiced',
         accuracy: 'Accuracy',
         remaining: 'Remaining',
         total: 'Attempts',
         words: 'words',
-        progressLabel: 'Mastery progress',
-        progressDetail: '{count} of {total} filtered words marked correct at least once.',
+        progressLabel: 'Practice history progress',
+        progressDetail: '{count} of {total} filtered words have historical practice attempts.',
       },
       levelLabels: {
         'B2 Beruf': 'B2 Beruf',
@@ -939,13 +939,13 @@ const MESSAGES: Record<Locale, AppMessages> = {
         reset: 'Filter zurücksetzen',
       },
       metrics: {
-        mastered: 'Beherrscht',
+        mastered: 'Geübt',
         accuracy: 'Genauigkeit',
         remaining: 'Verbleibend',
         total: 'Versuche',
         words: 'Wörter',
-        progressLabel: 'Fortschritt der Beherrschung',
-        progressDetail: '{count} von {total} gefilterten Wörtern wurden mindestens einmal korrekt markiert.',
+        progressLabel: 'Fortschritt aus der Übungshistorie',
+        progressDetail: '{count} von {total} gefilterten Wörtern haben historische Übungsversuche.',
       },
       levelLabels: {
         'B2 Beruf': 'B2 Beruf',

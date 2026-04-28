@@ -28,7 +28,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslations } from '@/locales';
-import { fetchWortschatzWords, WORTSCHATZ_QUERY_KEY } from '@/lib/wortschatz';
+import {
+  fetchWortschatzHistorySummary,
+  fetchWortschatzWords,
+  WORTSCHATZ_HISTORY_SUMMARY_QUERY_KEY,
+  WORTSCHATZ_QUERY_KEY,
+} from '@/lib/wortschatz';
 import {
   ALL_WORTSCHATZ_LEVELS,
   ALL_WORTSCHATZ_POS,
@@ -192,6 +197,11 @@ export default function WortschatzPage() {
     queryKey: WORTSCHATZ_QUERY_KEY,
     queryFn: fetchWortschatzWords,
   });
+  const historySummaryQuery = useQuery({
+    queryKey: [...WORTSCHATZ_HISTORY_SUMMARY_QUERY_KEY, authSession.data?.user.id ?? null] as const,
+    queryFn: fetchWortschatzHistorySummary,
+    enabled: authSession.status !== 'pending',
+  });
 
   const words = wortschatzQuery.data?.words ?? [];
   const datasetVersion = wortschatzQuery.data?.datasetVersion ?? null;
@@ -213,10 +223,20 @@ export default function WortschatzPage() {
   const filterSignature = buildFilterSignature(normalizedSearchQuery, selectedLevels, effectiveSelectedPos);
   const wordsById = new Map(words.map((word) => [word.id, word] as const));
   const groupedWords = groupWordsByPos(filteredWords);
-  const masteredWordIds = new Set(storageState.masteredWordIds);
-  const masteredVisibleCount = filteredWords.filter((word) => masteredWordIds.has(word.id)).length;
-  const masteredProgress =
-    filteredWords.length > 0 ? Math.round((masteredVisibleCount / filteredWords.length) * 100) : 0;
+  const wordHistoryById = historySummaryQuery.data?.byWordId ?? {};
+  const correctVisibleCount = filteredWords.reduce(
+    (sum, word) => sum + (wordHistoryById[String(word.id)]?.correct ?? 0),
+    0,
+  );
+  const incorrectVisibleCount = filteredWords.reduce(
+    (sum, word) => sum + (wordHistoryById[String(word.id)]?.incorrect ?? 0),
+    0,
+  );
+  const practicedVisibleCount = filteredWords.filter(
+    (word) => (wordHistoryById[String(word.id)]?.attempts ?? 0) > 0,
+  ).length;
+  const practicedProgress =
+    filteredWords.length > 0 ? Math.round((practicedVisibleCount / filteredWords.length) * 100) : 0;
   const currentWordId = storageState.drillOrder[storageState.drillIndex] ?? null;
   const currentWord = currentWordId ? wordsById.get(currentWordId) ?? null : null;
   const isDrillComplete = filteredWords.length > 0 && storageState.drillIndex >= storageState.drillOrder.length;
@@ -615,25 +635,25 @@ export default function WortschatzPage() {
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="rounded-2xl border border-success-border/60 bg-success-muted/70 px-4 py-3">
                         <p className="text-xs font-semibold text-success-muted-foreground">{copy.drill.correct}</p>
-                        <p className="text-lg font-semibold text-success-foreground">{storageState.correctCount}</p>
+                        <p className="text-lg font-semibold text-success-foreground">{correctVisibleCount}</p>
                       </div>
                       <div className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3">
                         <p className="text-xs font-semibold text-destructive">{copy.drill.incorrect}</p>
-                        <p className="text-lg font-semibold text-destructive">{storageState.wrongCount}</p>
+                        <p className="text-lg font-semibold text-destructive">{incorrectVisibleCount}</p>
                       </div>
                       <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3">
                         <p className="text-xs font-semibold text-muted-foreground">{copy.metrics.mastered}</p>
                         <p className="text-lg font-semibold text-foreground">
-                          {masteredVisibleCount}/{filteredWords.length} {copy.metrics.words}
+                          {practicedVisibleCount}/{filteredWords.length} {copy.metrics.words}
                         </p>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Progress value={masteredProgress} aria-label={copy.metrics.progressLabel} />
+                      <Progress value={practicedProgress} aria-label={copy.metrics.progressLabel} />
                       <p className="text-xs text-muted-foreground">
                         {formatTemplate(copy.metrics.progressDetail, {
-                          count: String(masteredVisibleCount),
+                          count: String(practicedVisibleCount),
                           total: String(filteredWords.length),
                         })}
                       </p>
