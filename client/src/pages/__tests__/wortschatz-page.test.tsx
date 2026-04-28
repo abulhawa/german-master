@@ -206,7 +206,7 @@ describe('Wortschatz page', () => {
     expect(await screen.findByText('Tap to reveal')).toBeInTheDocument();
   });
 
-  it('supports swipe gestures after reveal without practice submission or history calls', async () => {
+  it('ignores pointer drags after reveal so text selection does not answer the card', async () => {
     const fetchMock = installWortschatzFetch([FIXTURE_WORDS[0]!]);
 
     renderWortschatzPage();
@@ -217,10 +217,11 @@ describe('Wortschatz page', () => {
     const card = screen.getByRole('button', { name: /employment contract/i });
     fireEvent.pointerDown(card, { clientX: 10 });
     fireEvent.pointerMove(card, { clientX: 130 });
-    expect(screen.getAllByText('Correct').length).toBeGreaterThan(0);
     fireEvent.pointerUp(card, { clientX: 130 });
 
-    expect(await screen.findByText('Drill complete')).toBeInTheDocument();
+    expect(screen.queryByText('Drill complete')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Correct' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Incorrect' })).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/api/submission'), expect.anything());
   });
 

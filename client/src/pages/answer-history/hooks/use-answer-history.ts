@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useAuthSession } from "@/auth/session";
 import { clearPracticeHistory, fetchPracticeHistory } from "@/lib/api";
 import { getDeviceId } from "@/lib/device";
 import { AnsweredQuestion, loadAnswerHistory, saveAnswerHistory } from "@/lib/answer-history";
@@ -43,6 +44,8 @@ interface UseAnswerHistoryResult {
 }
 
 export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHistoryOptions = {}): UseAnswerHistoryResult {
+  const authSession = useAuthSession();
+  const isAuthenticated = Boolean(authSession.data?.user?.id);
   const [history, setHistory] = useState<AnsweredQuestion[]>(() => loadAnswerHistory());
   const [levelFilter, setLevelFilter] = useState<LevelFilter>("all");
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
@@ -70,7 +73,9 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
           return;
         }
 
-        setHistory((current) => mergeAnswerLists(remoteHistory, current));
+        setHistory((current) =>
+          isAuthenticated ? remoteHistory : mergeAnswerLists(remoteHistory, current),
+        );
       } catch (error) {
         if (!cancelled) {
           console.error("[answers] Failed to load practice history", error);
@@ -91,7 +96,7 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
     return () => {
       cancelled = true;
     };
-  }, [refreshRequest]);
+  }, [isAuthenticated, refreshRequest]);
 
   const filteredHistory = useMemo(() => {
     return history.filter((item) => {

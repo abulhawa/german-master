@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Check, CheckCircle2, Filter, RotateCcw, Search, Volume2, X } from 'lucide-react';
@@ -42,7 +42,7 @@ import { cn, speak } from '@/lib/utils';
 import type { PartOfSpeech, WortschatzWord } from '@shared';
 
 const B2_EXAM_DATE = new Date(2026, 3, 30);
-const SWIPE_THRESHOLD_PX = 80;
+const TEXT_SELECTION_DRAG_THRESHOLD_PX = 8;
 
 const WORTSCHATZ_IDS = {
   page: 'wortschatz-page',
@@ -185,8 +185,8 @@ export default function WortschatzPage() {
   const navigationItems = getPrimaryNavigationItems(authSession.data?.user.role ?? null);
   const [storageState, setStorageState] = useState(() => loadWortschatzState());
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
-  const [pointerStartX, setPointerStartX] = useState<number | null>(null);
-  const [swipeHint, setSwipeHint] = useState<'correct' | 'incorrect' | null>(null);
+  const cardPointerStartRef = useRef<{ x: number; y: number } | null>(null);
+  const cardPointerMovedRef = useRef(false);
 
   const wortschatzQuery = useQuery({
     queryKey: WORTSCHATZ_QUERY_KEY,
@@ -292,7 +292,6 @@ export default function WortschatzPage() {
 
   useEffect(() => {
     setIsAnswerVisible(false);
-    setSwipeHint(null);
   }, [currentWordId, storageState.activeTab]);
 
   const sidebar = (
@@ -460,40 +459,47 @@ export default function WortschatzPage() {
         drillIndex: Math.min(previous.drillIndex + 1, previous.drillOrder.length),
       };
     });
-    setSwipeHint(null);
   };
 
   const handleCardPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (isAnswerVisible) {
-      setPointerStartX(event.clientX);
-    }
+    cardPointerStartRef.current = { x: event.clientX, y: event.clientY };
+    cardPointerMovedRef.current = false;
   };
 
   const handleCardPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (pointerStartX === null || !isAnswerVisible) {
+    const pointerStart = cardPointerStartRef.current;
+    if (!pointerStart) {
       return;
     }
 
-    const delta = event.clientX - pointerStartX;
-    setSwipeHint(delta > SWIPE_THRESHOLD_PX ? 'correct' : delta < -SWIPE_THRESHOLD_PX ? 'incorrect' : null);
+    const deltaX = Math.abs(event.clientX - pointerStart.x);
+    const deltaY = Math.abs(event.clientY - pointerStart.y);
+    if (deltaX > TEXT_SELECTION_DRAG_THRESHOLD_PX || deltaY > TEXT_SELECTION_DRAG_THRESHOLD_PX) {
+      cardPointerMovedRef.current = true;
+    }
   };
 
-  const handleCardPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    if (pointerStartX === null || !isAnswerVisible) {
-      setPointerStartX(null);
+  const resetCardPointerTracking = () => {
+    cardPointerStartRef.current = null;
+    cardPointerMovedRef.current = false;
+  };
+
+  const handleCardClick = () => {
+    if (isAnswerVisible) {
+      resetCardPointerTracking();
       return;
     }
 
-    const delta = event.clientX - pointerStartX;
-    setPointerStartX(null);
+    const selectedText =
+      typeof window !== 'undefined' ? window.getSelection()?.toString().trim() ?? '' : '';
+    const shouldIgnoreClick = cardPointerMovedRef.current || selectedText.length > 0;
+    resetCardPointerTracking();
 
-    if (delta > SWIPE_THRESHOLD_PX) {
-      handleDrillResult('correct');
-    } else if (delta < -SWIPE_THRESHOLD_PX) {
-      handleDrillResult('incorrect');
-    } else {
-      setSwipeHint(null);
+    if (shouldIgnoreClick) {
+      return;
     }
+
+    setIsAnswerVisible(true);
   };
 
   const renderLoading = () => (
@@ -638,10 +644,13 @@ export default function WortschatzPage() {
                       tabIndex={0}
                       className={cn(
                         'relative min-h-[340px] touch-pan-y overflow-hidden rounded-3xl border border-border/60 bg-card p-5 shadow-soft shadow-primary/5 transition-transform',
-                        isAnswerVisible ? 'cursor-grab' : 'cursor-pointer',
+                        isAnswerVisible ? 'cursor-default' : 'cursor-pointer',
                       )}
-                      onClick={() => setIsAnswerVisible(true)}
+                      onClick={handleCardClick}
                       onKeyDown={(event) => {
+                        if (event.currentTarget !== event.target) {
+                          return;
+                        }
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
                           setIsAnswerVisible(true);
@@ -649,20 +658,8 @@ export default function WortschatzPage() {
                       }}
                       onPointerDown={handleCardPointerDown}
                       onPointerMove={handleCardPointerMove}
-                      onPointerUp={handleCardPointerUp}
+                      onPointerCancel={resetCardPointerTracking}
                     >
-                      {swipeHint ? (
-                        <div
-                          className={cn(
-                            'absolute inset-0 z-indicator flex items-center justify-center text-lg font-semibold',
-                            swipeHint === 'correct'
-                              ? 'bg-success-muted/90 text-success-muted-foreground'
-                              : 'bg-destructive/15 text-destructive',
-                          )}
-                        >
-                          {swipeHint === 'correct' ? copy.drill.correct : copy.drill.incorrect}
-                        </div>
-                      ) : null}
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="secondary" className="rounded-full px-3 py-1">
