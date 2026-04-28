@@ -10,6 +10,28 @@ export function classifyManualChunk(id: string): string | undefined {
     return undefined;
   }
 
+  if (id.includes("@supabase/")) {
+    return "supabase";
+  }
+
+  if (
+    id.includes("@radix-ui/") ||
+    id.includes("cmdk") ||
+    id.includes("vaul") ||
+    id.includes("input-otp") ||
+    id.includes("react-day-picker") ||
+    id.includes("next-themes") ||
+    id.includes("class-variance-authority") ||
+    id.includes("tailwind-merge") ||
+    id.includes("clsx")
+  ) {
+    return "ui-vendor";
+  }
+
+  if (id.includes("framer-motion")) {
+    return "motion";
+  }
+
   if (id.includes("recharts")) {
     return "recharts";
   }
