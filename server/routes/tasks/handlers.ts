@@ -403,6 +403,30 @@ export function createSubmitTaskHandler(): RequestHandler {
       }
 
       const queueCap = registryEntry.queueCap;
+      const practiceHistoryValues = {
+        taskId: resolvedTaskId,
+        lexemeId: taskRow.lexemeId!,
+        pos: taskRow.pos!,
+        taskType: taskRow.taskType!,
+        renderer: taskRow.renderer!,
+        deviceId: payload.deviceId,
+        userId: sessionUserId,
+        result: persistedResult,
+        responseMs,
+        submittedAt: attemptTimestamp,
+        answeredAt: answeredAt ?? submittedAt ?? null,
+        queuedAt: queuedAt ?? null,
+        cefrLevel: resolvedCefrLevel,
+        hintsUsed: payload.hintsUsed ?? false,
+        metadata: {
+          submittedResponse: payload.submittedResponse ?? payload.answer ?? null,
+          expectedResponse: payload.expectedResponse ?? null,
+          promptSummary: typeof payload.promptSummary === "string" ? payload.promptSummary : null,
+          queueCap,
+          frequencyRank: taskRow.frequencyRank ?? null,
+          legacyVerb: payload.legacyVerb ?? null,
+        },
+      };
 
       if (sessionUserId) {
         await db.insert(userPracticeHistory).values({
@@ -422,32 +446,9 @@ export function createSubmitTaskHandler(): RequestHandler {
           hintsUsed: payload.hintsUsed ?? false,
           submittedAt: attemptTimestamp,
         });
-      } else {
-        await db.insert(practiceHistory).values({
-          taskId: resolvedTaskId,
-          lexemeId: taskRow.lexemeId!,
-          pos: taskRow.pos!,
-          taskType: taskRow.taskType!,
-          renderer: taskRow.renderer!,
-          deviceId: payload.deviceId,
-          userId: null,
-          result: persistedResult,
-          responseMs,
-          submittedAt: attemptTimestamp,
-          answeredAt: answeredAt ?? submittedAt ?? null,
-          queuedAt: queuedAt ?? null,
-          cefrLevel: resolvedCefrLevel,
-          hintsUsed: payload.hintsUsed ?? false,
-          metadata: {
-            submittedResponse: payload.submittedResponse ?? payload.answer ?? null,
-            expectedResponse: payload.expectedResponse ?? null,
-            promptSummary: typeof payload.promptSummary === "string" ? payload.promptSummary : null,
-            queueCap,
-            frequencyRank: taskRow.frequencyRank ?? null,
-            legacyVerb: payload.legacyVerb ?? null,
-          },
-        });
       }
+
+      await db.insert(practiceHistory).values(practiceHistoryValues);
 
       await logPracticeAttempt(db, {
         taskId: resolvedTaskId,

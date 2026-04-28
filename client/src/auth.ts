@@ -11,8 +11,6 @@ function requireSupabaseClient() {
 export async function signInWithGoogle() {
   const supabase = requireSupabaseClient();
   const redirectTo = getSupabaseAuthRedirectUrl();
-  console.log('[auth] redirectTo', redirectTo);
-  console.log('[auth] PROD', import.meta.env.PROD);
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

@@ -320,6 +320,13 @@ describe('tasks API', () => {
       queueCap: submissionBody.queueCap,
     });
 
+    const mobileHistoryResult = await dbContext.pool.query(
+      'select count(*)::int as count from user_practice_history where task_id = $1',
+      [task.taskId],
+    );
+
+    expect(mobileHistoryResult.rows[0]!.count).toBe(0);
+
     const logResult = await dbContext.pool.query(
       'select task_id, device_id, user_id, cefr_level, attempted_at from practice_log where task_id = $1 and device_id = $2',
       [task.taskId, 'device-123'],
@@ -329,6 +336,92 @@ describe('tasks API', () => {
     expect(logResult.rows[0]!.user_id).toBeNull();
     expect(logResult.rows[0]!.cefr_level).toBe('__');
     expect(new Date(logResult.rows[0]!.attempted_at).getTime()).toBeGreaterThan(0);
+  });
+
+  it('records authenticated submissions in mobile-compatible and web history tables', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'history-user-1';
+    const deviceId = 'history-device-1';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-history', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    const taskResponse = await invokeApi('/api/tasks?pos=verb&limit=1');
+    expect(taskResponse.status).toBe(200);
+    const task = (taskResponse.bodyJson as any).tasks[0];
+    expect(task).toBeDefined();
+
+    const submittedAt = new Date('2025-02-02T10:00:00.000Z').toISOString();
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: task.taskId,
+        lexemeId: task.lexeme.id,
+        taskType: task.taskType,
+        pos: task.pos,
+        renderer: task.renderer,
+        deviceId,
+        submittedAt,
+        result: 'incorrect',
+        submittedResponse: 'gehte',
+        expectedResponse: 'ging',
+        promptSummary: 'gehen - past tense',
+        timeSpentMs: 1800,
+        cefrLevel: 'A1',
+        hintsUsed: true,
+      },
+    });
+
+    expect(submission.status).toBe(200);
+
+    const mobileHistory = await dbContext.pool.query(
+      [
+        'select user_id, task_id, device_id, result, submitted_answer, correct_answer, response_ms, cefr_level, hints_used',
+        'from user_practice_history where user_id = $1 and task_id = $2',
+      ].join(' '),
+      [userId, task.taskId],
+    );
+
+    expect(mobileHistory.rowCount).toBe(1);
+    expect(mobileHistory.rows[0]).toMatchObject({
+      user_id: userId,
+      task_id: task.taskId,
+      device_id: deviceId,
+      result: 'incorrect',
+      submitted_answer: 'gehte',
+      correct_answer: 'ging',
+      response_ms: 1800,
+      cefr_level: 'A1',
+      hints_used: true,
+    });
+
+    const webHistory = await dbContext.pool.query(
+      [
+        'select user_id, task_id, device_id, result, response_ms, cefr_level, hints_used, metadata',
+        'from practice_history where user_id = $1 and task_id = $2',
+      ].join(' '),
+      [userId, task.taskId],
+    );
+
+    expect(webHistory.rowCount).toBe(1);
+    expect(webHistory.rows[0]).toMatchObject({
+      user_id: userId,
+      task_id: task.taskId,
+      device_id: deviceId,
+      result: 'incorrect',
+      response_ms: 1800,
+      cefr_level: 'A1',
+      hints_used: true,
+    });
+    expect(webHistory.rows[0]!.metadata).toMatchObject({
+      submittedResponse: 'gehte',
+      expectedResponse: 'ging',
+      promptSummary: 'gehen - past tense',
+    });
   });
 
   it('upserts practice log rows for both device and user aggregates', async () => {
