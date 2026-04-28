@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { cleanupSupabaseAuthUrl, getSupabaseAuthRedirectUrl } from '../supabase';
+import { cleanupSupabaseAuthUrl, getSupabaseAuthRedirectOrigin, getSupabaseAuthRedirectUrl } from '../supabase';
 
 describe('Supabase auth URL helpers', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
     window.history.replaceState(null, '', '/');
   });
 
@@ -14,6 +15,22 @@ describe('Supabase auth URL helpers', () => {
     );
 
     expect(redirectUrl).toBe('http://localhost:5000/wortschatz');
+  });
+
+  it('uses the current origin for auth redirect origins outside production', () => {
+    const redirectOrigin = getSupabaseAuthRedirectOrigin(new URL('http://localhost:5173/wortschatz'));
+
+    expect(redirectOrigin).toBe('http://localhost:5173');
+  });
+
+  it('uses the production auth origin for redirects in production', () => {
+    vi.stubEnv('PROD', true);
+
+    const redirectOrigin = getSupabaseAuthRedirectOrigin(new URL('http://localhost:3000/wortschatz'));
+    const redirectUrl = getSupabaseAuthRedirectUrl(new URL('http://localhost:3000/wortschatz?code=secret'));
+
+    expect(redirectOrigin).toBe('https://gvm.qortxai.com');
+    expect(redirectUrl).toBe('https://gvm.qortxai.com/wortschatz');
   });
 
   it('removes Supabase token fragments without changing the app route path', () => {

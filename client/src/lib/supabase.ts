@@ -2,33 +2,22 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const configuredAuthSiteUrl = import.meta.env.VITE_AUTH_SITE_URL as string | undefined;
 
 const PRODUCTION_AUTH_SITE_URL = 'https://gvm.qortxai.com';
-const DEVELOPMENT_AUTH_SITE_URL = 'http://localhost:3000';
 const SENSITIVE_AUTH_HASH_PARAMS = ['access_token', 'refresh_token', 'provider_token', 'provider_refresh_token'];
 
 let client: SupabaseClient | null = null;
 
-function trimTrailingSlash(value: string): string {
-  return value.replace(/\/+$/, '');
-}
-
-function resolveDefaultAuthSiteUrl(location: Location | URL = window.location): string {
+export function getSupabaseAuthRedirectOrigin(location: Location | URL = window.location): string {
   if (import.meta.env.PROD) {
     return PRODUCTION_AUTH_SITE_URL;
   }
 
-  if (configuredAuthSiteUrl?.trim()) {
-    return trimTrailingSlash(configuredAuthSiteUrl.trim());
-  }
-
-  const currentOrigin = location.origin;
-  return currentOrigin.startsWith('http://localhost:') ? currentOrigin : DEVELOPMENT_AUTH_SITE_URL;
+  return location.origin;
 }
 
 export function getSupabaseAuthRedirectUrl(location: Location | URL = window.location): string {
-  const redirectUrl = new URL(resolveDefaultAuthSiteUrl(location));
+  const redirectUrl = new URL(getSupabaseAuthRedirectOrigin(location));
   redirectUrl.pathname = location.pathname;
   redirectUrl.search = '';
   redirectUrl.hash = '';

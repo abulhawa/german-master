@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User } from '@supabase/supabase-js';
 
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseAuthRedirectOrigin, getSupabaseClient } from '@/lib/supabase';
 
 export interface SessionUser {
   id: string;
@@ -116,7 +116,7 @@ async function signUpWithEmail(credentials: EmailCredentials): Promise<void> {
     password: credentials.password,
     options: {
       data: credentials.name ? { name: credentials.name, full_name: credentials.name } : undefined,
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: getSupabaseAuthRedirectOrigin(),
     },
   });
 
@@ -147,7 +147,7 @@ async function resendVerificationEmailRequest(email: string): Promise<void> {
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: getSupabaseAuthRedirectOrigin(),
     },
   });
 
@@ -163,7 +163,7 @@ async function requestPasswordResetEmail(email: string): Promise<void> {
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo: getSupabaseAuthRedirectOrigin(),
   });
 
   if (error) {
