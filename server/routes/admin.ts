@@ -27,6 +27,10 @@ import {
   sendError,
 } from "./shared.js";
 
+function firstRouteParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function createAdminRouter(): Router {
   const router = Router();
 
@@ -108,7 +112,7 @@ export function createAdminRouter(): Router {
 
   router.get("/words/:id", requireAdminAccess, async (req, res) => {
     try {
-      const id = parseWordId(req.params.id);
+      const id = parseWordId(firstRouteParam(req.params.id));
       if (!id) {
         return sendError(res, 400, "Invalid word id", "INVALID_WORD_ID");
       }
@@ -128,7 +132,7 @@ export function createAdminRouter(): Router {
 
   router.patch("/words/:id", requireAdminAccess, async (req, res) => {
     try {
-      const id = parseWordId(req.params.id);
+      const id = parseWordId(firstRouteParam(req.params.id));
       if (!id) {
         return sendError(res, 400, "Invalid word id", "INVALID_WORD_ID");
       }
@@ -155,7 +159,7 @@ export function createAdminRouter(): Router {
 
   router.post("/words/:id/enrich", requireAdminAccess, async (req, res) => {
     try {
-      const id = parseWordId(req.params.id);
+      const id = parseWordId(firstRouteParam(req.params.id));
       if (!id) {
         return sendError(res, 400, "Invalid word id", "INVALID_WORD_ID");
       }

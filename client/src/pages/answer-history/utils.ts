@@ -1,10 +1,10 @@
 import type { CEFRLevel } from "@shared";
 import type { AnsweredQuestion } from "@/lib/answer-history";
 
-export type LevelFilter = CEFRLevel | "all";
+export type LevelFilter = CEFRLevel | "B2 Beruf" | "all";
 export type ResultFilter = "all" | "correct" | "incorrect";
 
-export const LEVEL_FILTERS: LevelFilter[] = ["all", "A1", "A2", "B1", "B2", "C1", "C2"];
+export const LEVEL_FILTERS: LevelFilter[] = ["all", "A1", "A2", "B1", "B2", "B2 Beruf", "C1", "C2"];
 export const RESULT_FILTERS: ResultFilter[] = ["all", "correct", "incorrect"];
 
 export const ANSWER_HISTORY_IDS = {
@@ -22,6 +22,20 @@ export const ANSWER_HISTORY_IDS = {
 } as const;
 
 export const DEFAULT_PAGE_SIZE = 25;
+
+function collectEntryLevels(entry: AnsweredQuestion): string[] {
+  const levels: string[] = [];
+  for (const level of [entry.level, entry.cefrLevel, entry.lexeme?.level] as unknown[]) {
+    if (typeof level === "string" && level.trim().length > 0) {
+      levels.push(level);
+    }
+  }
+  return Array.from(new Set(levels));
+}
+
+export function answerMatchesLevelFilter(entry: AnsweredQuestion, levelFilter: LevelFilter): boolean {
+  return levelFilter === "all" || collectEntryLevels(entry).includes(levelFilter);
+}
 
 export function mergeAnswerLists(
   primary: AnsweredQuestion[],

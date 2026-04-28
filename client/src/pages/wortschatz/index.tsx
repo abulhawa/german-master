@@ -85,7 +85,7 @@ function wordMatchesLevels(word: WortschatzWord, selectedLevels: WortschatzLevel
   }
 
   if (selectedLevels.includes('B2 Beruf')) {
-    return word.level === 'B2' || word.level === null;
+    return word.level === 'B2 Beruf' || word.level === 'B2' || word.level === null;
   }
 
   return selectedLevels.some((level) => word.level === level);

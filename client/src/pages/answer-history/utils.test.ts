@@ -1,0 +1,46 @@
+import { describe, expect, it } from "vitest";
+
+import type { AnsweredQuestion } from "@/lib/answer-history";
+
+import { LEVEL_FILTERS, answerMatchesLevelFilter } from "./utils";
+
+function createHistoryEntry(level: string): AnsweredQuestion {
+  return {
+    id: `entry-${level}`,
+    taskId: `task-${level}`,
+    lexemeId: `lexeme-${level}`,
+    taskType: "conjugate_form",
+    pos: "verb",
+    renderer: "conjugate-form",
+    result: "correct",
+    submittedResponse: "ging",
+    expectedResponse: "ging",
+    promptSummary: "gehen - Praeteritum",
+    answeredAt: "2026-04-28T08:00:00.000Z",
+    timeSpentMs: 1000,
+    timeSpent: 1000,
+    cefrLevel: level as AnsweredQuestion["cefrLevel"],
+    level: level as AnsweredQuestion["level"],
+    lexeme: {
+      id: `lexeme-${level}`,
+      lemma: "gehen",
+      pos: "verb",
+      level: level as NonNullable<AnsweredQuestion["lexeme"]>["level"],
+    },
+  };
+}
+
+describe("answer history level filters", () => {
+  it("exposes B2 Beruf as a dedicated history filter", () => {
+    expect(LEVEL_FILTERS).toContain("B2 Beruf");
+  });
+
+  it("matches B2 Beruf history entries without folding them into B2", () => {
+    const berufEntry = createHistoryEntry("B2 Beruf");
+    const b2Entry = createHistoryEntry("B2");
+
+    expect(answerMatchesLevelFilter(berufEntry, "B2 Beruf")).toBe(true);
+    expect(answerMatchesLevelFilter(berufEntry, "B2")).toBe(false);
+    expect(answerMatchesLevelFilter(b2Entry, "B2 Beruf")).toBe(false);
+  });
+});

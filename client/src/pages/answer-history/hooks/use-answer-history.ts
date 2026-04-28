@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { clearPracticeHistory, fetchPracticeHistory } from "@/lib/api";
 import { getDeviceId } from "@/lib/device";
 import { AnsweredQuestion, loadAnswerHistory, saveAnswerHistory } from "@/lib/answer-history";
-import { formatAverageDuration, mergeAnswerLists, DEFAULT_PAGE_SIZE, LEVEL_FILTERS, RESULT_FILTERS, type LevelFilter, type ResultFilter } from "../utils";
+import { answerMatchesLevelFilter, formatAverageDuration, mergeAnswerLists, DEFAULT_PAGE_SIZE, LEVEL_FILTERS, RESULT_FILTERS, type LevelFilter, type ResultFilter } from "../utils";
 
 interface UseAnswerHistoryOptions {
   pageSize?: number;
@@ -95,8 +95,7 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
 
   const filteredHistory = useMemo(() => {
     return history.filter((item) => {
-      const matchesLevel =
-        levelFilter === "all" || item.level === levelFilter || item.cefrLevel === levelFilter;
+      const matchesLevel = answerMatchesLevelFilter(item, levelFilter);
       const matchesResult = resultFilter === "all" || item.result === resultFilter;
       return matchesLevel && matchesResult;
     });
