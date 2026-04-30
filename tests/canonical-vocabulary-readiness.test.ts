@@ -140,6 +140,50 @@ describe('canonical vocabulary readiness verification', () => {
     expect(report.issues).toEqual([]);
   });
 
+  it('accepts migration state when legacy B2 Beruf lexeme metadata has canonical task collection support', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    await dbContext.pool.query(
+      'update lexemes set metadata = $1::jsonb where lemma = $2',
+      [JSON.stringify({ level: 'B2 Beruf', english: 'employment contract' }), 'Arbeitsvertrag'],
+    );
+
+    const report = await inspectCanonicalVocabularyReadiness();
+
+    expect(report.b2BerufVocabularyTaskQueryable).toBe(true);
+    expect(report.b2BerufLevelMisclassifiedCount).toBe(0);
+    expect(report.issues).not.toContain('B2_BERUF_LEVEL_NOT_CANONICAL');
+    expect(report.issues).not.toContain('B2_BERUF_NOT_QUERYABLE');
+  });
+
+  it('fails when B2 Beruf only exists as legacy level metadata without canonical collection support', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    await dbContext.pool.query(
+      'update lexemes set metadata = $1::jsonb where lemma = $2',
+      [JSON.stringify({ level: 'B2 Beruf', english: 'employment contract' }), 'Arbeitsvertrag'],
+    );
+    await dbContext.pool.query(
+      [
+        "update task_specs set",
+        "prompt = prompt - 'collections',",
+        "metadata = metadata - 'collections'",
+        "where task_type = 'vocabulary_drill'",
+        "and lexeme_id = (select id from lexemes where lemma = 'Arbeitsvertrag' limit 1)",
+      ].join(' '),
+    );
+
+    const report = await inspectCanonicalVocabularyReadiness();
+
+    expect(report.b2BerufVocabularyTaskQueryable).toBe(true);
+    expect(report.b2BerufLevelMisclassifiedCount).toBe(1);
+    expect(report.issues).toContain('B2_BERUF_LEVEL_NOT_CANONICAL');
+  });
+
   it('reports missing vocabulary_drill task specs', async () => {
     await drizzleDb
       .delete(taskSpecsTable)

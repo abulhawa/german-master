@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { eq, inArray, or, sql, notInArray, type SQL } from "drizzle-orm";
 import type { LexemePos, TaskType } from "@shared";
+import { B2_BERUF_COLLECTION } from "@shared/content-sources";
 import {
   db,
   lexemes,
@@ -177,7 +178,7 @@ export function createListTasksHandler(): RequestHandler {
       if (requestedLevels.length > 0) {
         filters.push(
           inArray(
-            sql`upper(coalesce(${lexemes.metadata} ->> 'level', ${taskSpecs.prompt} ->> 'cefrLevel'))`,
+            sql`upper(coalesce(${taskSpecs.prompt} ->> 'cefrLevel', ${taskSpecs.metadata} ->> 'level', ${lexemes.metadata} ->> 'level'))`,
             requestedLevels,
           ),
         );
@@ -197,9 +198,23 @@ export function createListTasksHandler(): RequestHandler {
       );
 
       if (requestedCollections.length > 0) {
-        const collectionFilters = requestedCollections.map((requestedCollection) =>
-          sql`coalesce(${lexemes.metadata} -> 'collections', '[]'::jsonb) @> ${JSON.stringify([requestedCollection])}::jsonb`,
-        );
+        const collectionFilters = requestedCollections.map((requestedCollection) => {
+          const collectionJson = JSON.stringify([requestedCollection]);
+          const canonicalCollectionFilter = or(
+            sql`coalesce(${lexemes.metadata} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
+            sql`coalesce(${taskSpecs.prompt} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
+            sql`coalesce(${taskSpecs.metadata} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
+          );
+
+          if (requestedCollection !== B2_BERUF_COLLECTION) {
+            return canonicalCollectionFilter;
+          }
+
+          return or(
+            canonicalCollectionFilter,
+            sql`${lexemes.metadata} ->> 'level' = 'B2 Beruf'`,
+          );
+        });
         const collectionFilter = or(...collectionFilters);
         if (collectionFilter) {
           filters.push(collectionFilter);
