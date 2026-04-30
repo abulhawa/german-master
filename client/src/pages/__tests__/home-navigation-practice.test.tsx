@@ -147,6 +147,15 @@ describe('Home navigation - practice workflows', () => {
         expect.objectContaining({ level: ['B2'], taskTypes: ['conjugate_form'], limit: 15 }),
       );
     });
+    expect(
+      mockFetchPracticeTasks.mock.calls.some(
+        ([options]) =>
+          options.taskTypes.includes('conjugate_form') &&
+          Array.isArray(options.level) &&
+          options.level.includes('B2') &&
+          !options.collection,
+      ),
+    ).toBe(true);
 
     await waitFor(() => {
       const updatedCard = screen.queryByTestId('practice-card');
@@ -155,6 +164,48 @@ describe('Home navigation - practice workflows', () => {
         within(updatedCard!).getByRole('heading', { name: 'reisen', level: 1 }),
       ).toBeInTheDocument();
     });
+  });
+
+  it('exposes B2 Beruf as a collection and fetches canonical vocabulary drill tasks', async () => {
+    seedPracticeSettings();
+
+    mockFetchPracticeTasks.mockImplementation(async ({ taskTypes = [], limit = 15 }) => {
+      if (taskTypes.includes('vocabulary_drill')) {
+        return {
+          vocabulary_drill: Array.from({ length: limit }, (_, index) => buildPracticeTask('vocabulary_drill', index)),
+        };
+      }
+
+      return {
+        conjugate_form: [createConjugationTask('task-a1', 'gehen')],
+      };
+    });
+
+    renderHome();
+
+    const scopeButton = await screen.findByRole('button', { name: /adjust practice scope/i });
+    await userEvent.click(scopeButton);
+
+    const b2BerufTab = await screen.findByRole('tab', { name: 'B2 Beruf' });
+    expect(b2BerufTab).toBeInTheDocument();
+
+    await userEvent.click(b2BerufTab);
+
+    await waitFor(() => {
+      expect(mockFetchPracticeTasks).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taskTypes: ['vocabulary_drill'],
+          level: ['B2'],
+          collection: ['b2_beruf'],
+          limit: 15,
+        }),
+      );
+    });
+
+    expect(await screen.findByText('B2 Beruf collection')).toBeInTheDocument();
+    expect(screen.getByText(/Beruf vocabulary collection within CEFR B2/i)).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /verb level/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Writing Lab/i)).not.toBeInTheDocument();
   });
 
   it('reshuffles exhausted queues when manually reloading', async () => {
@@ -276,6 +327,7 @@ describe('Home navigation - practice workflows', () => {
       expect(screen.getByText('Focusing on B1/B2 level tasks.')).toBeInTheDocument();
       expect(screen.getByText(/B2 in \d+ days/)).toBeInTheDocument();
       expect(screen.queryByRole('tab', { name: /writing/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Writing Lab/i)).not.toBeInTheDocument();
       expect(screen.getAllByRole('link', { name: /writing/i }).length).toBeGreaterThan(0);
     } finally {
       vi.useRealTimers();

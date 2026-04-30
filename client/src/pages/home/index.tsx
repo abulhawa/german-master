@@ -16,6 +16,8 @@ import { recordTaskResult } from '@/lib/practice-progress';
 import { appendAnswer, createAnswerHistoryEntry } from '@/lib/answer-history';
 import {
   AVAILABLE_TASK_TYPES,
+  B2_BERUF_COLLECTION,
+  B2_BERUF_TASK_TYPES,
   SCOPE_LABELS,
   computeScope,
   buildPracticeSessionScopeKey,
@@ -82,11 +84,19 @@ export default function Home() {
 
   const scope = computeScope(settings);
   const isB2ExamMode = settings.b2ExamMode === true;
+  const isB2BerufScope = scope === 'b2Beruf';
   const sessionScopeKey = useMemo(
-    () => buildPracticeSessionScopeKey(settings),
-    [settings],
+    () => {
+      const baseKey = buildPracticeSessionScopeKey(settings);
+      return isB2BerufScope ? `${baseKey}__collection-${B2_BERUF_COLLECTION}` : baseKey;
+    },
+    [isB2BerufScope, settings],
   );
   const activeTaskTypes = useMemo(() => {
+    if (isB2BerufScope) {
+      return B2_BERUF_TASK_TYPES;
+    }
+
     if (isB2ExamMode) {
       return [
         'conjugate_form',
@@ -99,15 +109,22 @@ export default function Home() {
       ? settings.preferredTaskTypes
       : [settings.defaultTaskType];
     return normalisePreferredTaskTypes(preferred);
-  }, [isB2ExamMode, settings.preferredTaskTypes, settings.defaultTaskType]);
+  }, [isB2BerufScope, isB2ExamMode, settings.preferredTaskTypes, settings.defaultTaskType]);
   const levelOverride = useMemo<CEFRLevel[] | undefined>(
     () => {
+      if (isB2BerufScope) {
+        return ['B2'];
+      }
       if (!isB2ExamMode) {
         return undefined;
       }
       return ['B1', 'B2'];
     },
-    [isB2ExamMode],
+    [isB2BerufScope, isB2ExamMode],
+  );
+  const collectionOverride = useMemo<string[] | undefined>(
+    () => (isB2BerufScope ? [B2_BERUF_COLLECTION] : undefined),
+    [isB2BerufScope],
   );
   const verbLevel = getVerbLevel(settings);
   const verbLevelLabelId = useId();
@@ -144,13 +161,14 @@ export default function Home() {
     userId,
     resolveLevelForPos,
     levelOverride,
+    collectionOverride,
   });
 
   useEffect(() => {
     // Prefetch a small set of tasks for the current active types to warm the feed and reduce
     // latency when the practice card requests tasks for the first time.
     void queryClient.fetchQuery({
-      queryKey: ['tasks', 'home', activeTaskTypes],
+      queryKey: ['tasks', 'home', activeTaskTypes, levelOverride, collectionOverride],
       queryFn: async () => {
         try {
           // limit small to avoid excessive network usage
@@ -158,6 +176,7 @@ export default function Home() {
             taskTypes: activeTaskTypes,
             limit: 6,
             ...(levelOverride ? { level: levelOverride } : {}),
+            ...(collectionOverride ? { collection: collectionOverride } : {}),
           });
         } catch (e) {
           return [] as unknown as ReturnType<typeof fetchPracticeTasks>;
@@ -165,7 +184,7 @@ export default function Home() {
       },
       staleTime: 30_000,
     }).catch(() => undefined);
-  }, [activeTaskTypes, levelOverride]);
+  }, [activeTaskTypes, collectionOverride, levelOverride]);
 
   const sessionCompleted = session.completed.length;
   const milestoneTarget = useMemo(() => {
@@ -322,6 +341,7 @@ export default function Home() {
         verbLevelLabelId={verbLevelLabelId}
         modeSwitcherId={HOME_SECTION_IDS.modeSwitcher}
         levelLabel={homeTopBarCopy.levelLabel}
+        showVerbLevelSelect={!isB2BerufScope}
         onScopeChange={handleScopeChange}
         onTaskTypesChange={handleCustomTaskTypesChange}
         onVerbLevelChange={handleVerbLevelChange}
@@ -347,6 +367,14 @@ export default function Home() {
                   data-testid="practice-card-container"
                   id={HOME_SECTION_IDS.cardContainer}
                 >
+                  {isB2BerufScope ? (
+                    <div className="mb-4 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em]">
+                        {translations.home.b2BerufCollection.title}
+                      </p>
+                      <p className="mt-1 text-sm">{translations.home.b2BerufCollection.description}</p>
+                    </div>
+                  ) : null}
                   {isInitialLoading ? (
                     <div
                       className="flex h-[340px] items-center justify-center rounded-[28px] border border-dashed border-border/60 bg-background/70 shadow-2xl shadow-primary/15"
@@ -356,7 +384,7 @@ export default function Home() {
                     </div>
                   ) : activeTask ? (
                     <div id={HOME_SECTION_IDS.activeCardWrapper}>
-                      {isB2ExamMode ? (
+                      {isB2ExamMode && !isB2BerufScope ? (
                         <div className="mb-4 rounded-2xl border border-warning-border bg-warning-muted px-4 py-3 text-sm text-warning-muted-foreground">
                           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-warning-strong">
                             {translations.home.b2Banner.title}

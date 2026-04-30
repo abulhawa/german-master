@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BookOpen, Flame, PenLine, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { BookOpen, Briefcase, Flame, PenLine, SlidersHorizontal, Sparkles } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -56,6 +56,12 @@ const MODE_CONFIG: ModeConfig[] = [
     label: 'Adjectives',
     description: 'Polish comparative adjective endings.',
     icon: PenLine,
+  },
+  {
+    value: 'b2Beruf',
+    label: 'B2 Beruf',
+    description: 'Practice the Beruf vocabulary collection at CEFR B2.',
+    icon: Briefcase,
   },
   {
     value: 'custom',

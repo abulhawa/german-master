@@ -197,6 +197,40 @@ describe('fetchPracticeTasksByType', () => {
     expect(result.conjugate_form[0]!.taskId).toBe('task-1');
     expect(result.noun_case_declension[0]!.taskId).toBe('task-2');
   });
+
+  it('sends canonical B2 Beruf vocabulary collection filters', async () => {
+    const payload = {
+      tasksByType: {
+        vocabulary_drill: [],
+      },
+    } satisfies Record<string, unknown>;
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = requestToUrl(input);
+      if (url.includes('/api/tasks')) {
+        return new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`Unexpected request: ${input}`);
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    await fetchPracticeTasksByType({
+      taskTypes: ['vocabulary_drill'],
+      limit: 10,
+      level: ['B2'],
+      collection: ['b2_beruf'],
+    });
+
+    const url = new URL(requestToUrl(fetchMock.mock.calls[0]![0]!));
+    expect(url.searchParams.getAll('taskTypes')).toEqual(['vocabulary_drill']);
+    expect(url.searchParams.getAll('level')).toEqual(['B2']);
+    expect(url.searchParams.getAll('collection')).toEqual(['b2_beruf']);
+    expect(url.searchParams.getAll('level')).not.toContain('B2 Beruf');
+  });
 });
 
 describe('client task registry parity', () => {

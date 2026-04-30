@@ -8,7 +8,10 @@ import type {
 
 import { clientTaskRegistry } from '@/lib/tasks';
 
-export type PracticeScope = 'all' | 'verbs' | 'nouns' | 'adjectives' | 'custom';
+export type PracticeScope = 'all' | 'verbs' | 'nouns' | 'adjectives' | 'b2Beruf' | 'custom';
+
+export const B2_BERUF_COLLECTION = 'b2_beruf';
+export const B2_BERUF_TASK_TYPES: TaskType[] = ['vocabulary_drill'];
 
 export const AVAILABLE_TASK_TYPES: TaskType[] = [
   'conjugate_form',
@@ -29,11 +32,12 @@ export const SCOPE_LABELS: Record<PracticeScope, string> = {
   verbs: 'Verbs only',
   nouns: 'Nouns only',
   adjectives: 'Adjectives only',
+  b2Beruf: 'B2 Beruf',
   custom: 'Custom mix',
 };
 
 export function normalisePreferredTaskTypes(taskTypes: TaskType[]): TaskType[] {
-  const allowed = new Set(AVAILABLE_TASK_TYPES);
+  const allowed = new Set<TaskType>([...AVAILABLE_TASK_TYPES, ...B2_BERUF_TASK_TYPES]);
   const unique = Array.from(new Set(taskTypes.filter((type) => allowed.has(type))));
   if (unique.length > 0) {
     return unique;
@@ -48,6 +52,12 @@ export function determineScope(taskTypes: TaskType[]): PracticeScope {
     normalised.every((type) => AVAILABLE_TASK_TYPES.includes(type));
   if (allMatch) {
     return 'all';
+  }
+  if (
+    normalised.length === B2_BERUF_TASK_TYPES.length &&
+    normalised.every((type) => B2_BERUF_TASK_TYPES.includes(type))
+  ) {
+    return 'b2Beruf';
   }
   if (normalised.length === 1) {
     return TASK_TYPE_TO_SCOPE[normalised[0]!] ?? 'custom';
@@ -72,6 +82,8 @@ export function scopeToTaskTypes(scope: PracticeScope): TaskType[] {
       return ['noun_case_declension'];
     case 'adjectives':
       return ['adj_ending'];
+    case 'b2Beruf':
+      return [...B2_BERUF_TASK_TYPES];
     case 'custom':
     default:
       return [];

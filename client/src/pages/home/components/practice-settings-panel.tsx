@@ -41,6 +41,7 @@ export interface PracticeSettingsPanelProps {
   verbLevelLabelId: string;
   modeSwitcherId: string;
   levelLabel: string;
+  showVerbLevelSelect?: boolean;
   onScopeChange: (scope: PracticeScope) => void;
   onTaskTypesChange: (taskTypes: TaskType[]) => void;
   onVerbLevelChange: (level: CEFRLevel) => void;
@@ -55,6 +56,7 @@ export function PracticeSettingsPanel({
   verbLevelLabelId,
   levelLabel,
   modeSwitcherId,
+  showVerbLevelSelect = true,
   onScopeChange,
   onTaskTypesChange,
   onVerbLevelChange,
@@ -74,7 +76,9 @@ export function PracticeSettingsPanel({
           availableTaskTypes={availableTaskTypes}
           scopeBadgeLabel={scopeBadgeLabel}
         />
-        <VerbLevelSelect value={verbLevel} onChange={onVerbLevelChange} labelId={verbLevelLabelId} />
+        {showVerbLevelSelect ? (
+          <VerbLevelSelect value={verbLevel} onChange={onVerbLevelChange} labelId={verbLevelLabelId} />
+        ) : null}
       </div>
       <UserMenuControl className="w-auto flex-none" />
     </div>

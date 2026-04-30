@@ -31,6 +31,7 @@ interface FetchTasksForActiveTypesOptions {
   excludeTaskIds?: string[];
   shuffleSeed?: string;
   levelOverride?: CEFRLevel[];
+  collectionOverride?: string[];
 }
 
 interface FetchTasksForActiveTypesResult {
@@ -61,6 +62,7 @@ export async function fetchTasksForActiveTypes({
   excludeTaskIds,
   shuffleSeed,
   levelOverride,
+  collectionOverride,
 }: FetchTasksForActiveTypesOptions): Promise<FetchTasksForActiveTypesResult> {
   const resolvedShuffleSeed = shuffleSeed ?? createShuffleSeed();
   const taskLevels = taskTypes.map((taskType) => {
@@ -75,6 +77,7 @@ export async function fetchTasksForActiveTypes({
       taskTypes,
       limit: perTypeLimit,
       level: resolvedLevel,
+      ...(collectionOverride && collectionOverride.length > 0 ? { collection: collectionOverride } : {}),
       excludeTaskIds,
       shuffleSeed: resolvedShuffleSeed,
     });
@@ -139,6 +142,7 @@ export interface UseHomePracticeSessionOptions {
   userId: string | null | undefined;
   resolveLevelForPos: (pos: LexemePos) => CEFRLevel;
   levelOverride?: CEFRLevel[];
+  collectionOverride?: string[];
 }
 
 export interface QueueDiagnosticsSnapshot {
@@ -171,6 +175,7 @@ export function useHomePracticeSession({
   userId,
   resolveLevelForPos,
   levelOverride,
+  collectionOverride,
 }: UseHomePracticeSessionOptions): UseHomePracticeSessionResult {
   const [session, setSession] = useState<PracticeSessionState>(() =>
     loadPracticeSession({ scopeKey: sessionScopeKey, userId }),
@@ -287,6 +292,7 @@ export function useHomePracticeSession({
           perTypeLimit,
           resolveLevelForPos,
           levelOverride,
+          collectionOverride,
           ...(normalizedExcludeTaskIds ? { excludeTaskIds: normalizedExcludeTaskIds } : {}),
           ...(mode === 'shuffle' ? { shuffleSeed: createShuffleSeed() } : {}),
         });
@@ -367,7 +373,7 @@ export function useHomePracticeSession({
         setIsFetchingTasks(false);
       }
     },
-    [activeTaskTypes, levelOverride, resolveLevelForPos],
+    [activeTaskTypes, collectionOverride, levelOverride, resolveLevelForPos],
   );
 
   useEffect(() => {

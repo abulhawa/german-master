@@ -123,6 +123,15 @@ export interface PracticeCardMessages {
     showGrammarFocus: string;
     hideGrammarFocus: string;
   };
+  vocabulary: {
+    badgeLabel: string;
+    collectionBadge: string;
+    prompt: string;
+    answerLabel: string;
+    revealAnswer: string;
+    correct: string;
+    incorrect: string;
+  };
   unsupported: {
     title: string;
     description: string;
@@ -220,6 +229,10 @@ export interface HomeMessages {
     };
   };
   b2Banner: {
+    title: string;
+    description: string;
+  };
+  b2BerufCollection: {
     title: string;
     description: string;
   };
@@ -466,6 +479,10 @@ const MESSAGES: Record<Locale, AppMessages> = {
       b2Banner: {
         title: 'B2 Exam Mode',
         description: 'Focusing on B1/B2 level tasks.',
+      },
+      b2BerufCollection: {
+        title: 'B2 Beruf collection',
+        description: 'This is a Beruf vocabulary collection within CEFR B2, loaded with the canonical vocabulary task feed.',
       },
       b2Countdown: {
         upcoming: '📅 B2 in {days} days',
@@ -777,6 +794,15 @@ const MESSAGES: Record<Locale, AppMessages> = {
         showGrammarFocus: 'Show hint',
         hideGrammarFocus: 'Hide hint',
       },
+      vocabulary: {
+        badgeLabel: 'Vocabulary',
+        collectionBadge: 'Beruf collection',
+        prompt: 'Recall the meaning, reveal the answer, then grade your memory.',
+        answerLabel: 'Meaning',
+        revealAnswer: 'Show meaning',
+        correct: 'I knew it',
+        incorrect: 'Review again',
+      },
       unsupported: {
         title: 'Renderer missing',
         description: `No renderer is available for task type ${PRACTICE_CARD_PLACEHOLDER}.`,
@@ -906,6 +932,10 @@ const MESSAGES: Record<Locale, AppMessages> = {
       b2Banner: {
         title: 'B2-Prüfungsmodus',
         description: 'Fokus auf Aufgaben auf B1/B2-Niveau.',
+      },
+      b2BerufCollection: {
+        title: 'B2-Beruf-Sammlung',
+        description: 'Das ist eine Beruf-Wortschatzsammlung innerhalb von B2, geladen über den kanonischen Aufgaben-Feed.',
       },
       b2Countdown: {
         upcoming: '📅 B2 in {days} Tagen',
@@ -1216,6 +1246,15 @@ const MESSAGES: Record<Locale, AppMessages> = {
         matchSummary: '{matched}/{total} Schlüsselphrasen gefunden',
         showGrammarFocus: 'Hinweis anzeigen',
         hideGrammarFocus: 'Hinweis ausblenden',
+      },
+      vocabulary: {
+        badgeLabel: 'Wortschatz',
+        collectionBadge: 'Beruf-Sammlung',
+        prompt: 'Rufe die Bedeutung ab, decke die Antwort auf und bewerte dein Gedächtnis.',
+        answerLabel: 'Bedeutung',
+        revealAnswer: 'Bedeutung anzeigen',
+        correct: 'Gewusst',
+        incorrect: 'Wiederholen',
       },
       unsupported: {
         title: 'Renderer fehlt',

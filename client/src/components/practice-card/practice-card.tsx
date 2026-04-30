@@ -7,6 +7,7 @@ import {
   ConjugateFormRenderer,
   NounCaseDeclensionRenderer,
   UnsupportedRenderer,
+  VocabularyDrillRenderer,
 } from './renderers';
 
 export function PracticeCard(props: PracticeCardProps) {
@@ -46,6 +47,15 @@ export function PracticeCard(props: PracticeCardProps) {
       sessionProgress,
     };
     return <B2WritingPromptRenderer {...rendererProps} />;
+  }
+
+  if (isTaskOfType(props.task, 'vocabulary_drill')) {
+    const rendererProps: RendererProps<'vocabulary_drill'> = {
+      ...props,
+      task: props.task,
+      sessionProgress,
+    };
+    return <VocabularyDrillRenderer {...rendererProps} />;
   }
 
   const rendererProps: RendererProps = {
