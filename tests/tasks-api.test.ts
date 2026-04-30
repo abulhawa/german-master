@@ -478,6 +478,79 @@ describe('tasks API', () => {
     });
   });
 
+  it('resolves legacy Wortschatz word ids to canonical vocabulary history', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'wortschatz-history-user-1';
+    const deviceId = 'wortschatz-history-device-1';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-wortschatz-history', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    const insertedWord = await dbContext.pool.query<{ id: number }>(
+      [
+        'insert into words',
+        '(lemma, pos, level, english, gender, plural, approved, complete, sources_csv)',
+        'values ($1, $2, $3, $4, $5, $6, true, true, $7)',
+        'returning id',
+      ].join(' '),
+      [
+        'Arbeitsvertrag',
+        'N',
+        'B2 Beruf',
+        'employment contract',
+        'der',
+        'Arbeitsvertraege',
+        ANDROID_B2_BERUF_SOURCE,
+      ],
+    );
+    const legacyTaskId = `word_${insertedWord.rows[0]!.id}`;
+
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: legacyTaskId,
+        lexemeId: legacyTaskId,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId,
+        submittedAt: new Date('2025-03-03T10:00:00.000Z').toISOString(),
+        result: 'correct',
+        submittedResponse: 'Arbeitsvertrag',
+        expectedResponse: 'employment contract',
+        promptSummary: 'Arbeitsvertrag - vocabulary drill',
+        timeSpentMs: 900,
+        cefrLevel: 'B2',
+      },
+    });
+
+    expect(submission.status).toBe(200);
+    const submissionBody = submission.bodyJson as any;
+    expect(submissionBody.taskId).not.toBe(legacyTaskId);
+    expect(submissionBody.taskId).toContain(':vocabulary_drill:');
+
+    const canonicalRows = await dbContext.pool.query(
+      [
+        'select ph.task_id, ph.lexeme_id, uph.task_id as bridge_task_id, uph.lexeme_id as bridge_lexeme_id',
+        'from practice_history ph',
+        'inner join user_practice_history uph on uph.task_id = ph.task_id',
+        'where ph.user_id = $1 and ph.device_id = $2',
+      ].join(' '),
+      [userId, deviceId],
+    );
+
+    expect(canonicalRows.rowCount).toBe(1);
+    expect(canonicalRows.rows[0]!.task_id).toBe(submissionBody.taskId);
+    expect(canonicalRows.rows[0]!.task_id).not.toMatch(/^word_/);
+    expect(canonicalRows.rows[0]!.lexeme_id).not.toMatch(/^word_/);
+    expect(canonicalRows.rows[0]!.bridge_task_id).toBe(canonicalRows.rows[0]!.task_id);
+    expect(canonicalRows.rows[0]!.bridge_lexeme_id).toBe(canonicalRows.rows[0]!.lexeme_id);
+  });
+
   it('upserts practice log rows for both device and user aggregates', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');

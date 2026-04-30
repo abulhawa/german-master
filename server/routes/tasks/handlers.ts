@@ -33,6 +33,7 @@ import {
   fetchTaskRowById,
   fetchTasksForTypes,
   findTaskIdByLexemeAndType,
+  findVocabularyTaskIdByLegacyWordId,
 } from "./queries.js";
 import { logStructured } from "../../logger.js";
 import { checkAnswerLeniency } from "../../services/groq-leniency.js";
@@ -334,6 +335,21 @@ export function createSubmitTaskHandler(): RequestHandler {
       return findTaskIdByLexemeAndType(payload.lexemeId, payload.taskType);
     };
 
+    const resolveLegacyVocabularyTaskId = async (): Promise<string | null> => {
+      if (payload.taskType !== "vocabulary_drill") {
+        return null;
+      }
+
+      const legacyWordRef =
+        payload.taskId.startsWith("word_")
+          ? payload.taskId
+          : payload.lexemeId.startsWith("word_")
+          ? payload.lexemeId
+          : null;
+
+      return legacyWordRef ? findVocabularyTaskIdByLegacyWordId(legacyWordRef) : null;
+    };
+
     let resolvedTaskId = normaliseString(payload.taskId);
     let taskRow = resolvedTaskId ? await fetchTaskRowById(resolvedTaskId) : null;
 
@@ -342,6 +358,14 @@ export function createSubmitTaskHandler(): RequestHandler {
       if (fallbackTaskId) {
         resolvedTaskId = fallbackTaskId;
         taskRow = await fetchTaskRowById(fallbackTaskId);
+      }
+    }
+
+    if (!taskRow) {
+      const legacyVocabularyTaskId = await resolveLegacyVocabularyTaskId();
+      if (legacyVocabularyTaskId) {
+        resolvedTaskId = legacyVocabularyTaskId;
+        taskRow = await fetchTaskRowById(legacyVocabularyTaskId);
       }
     }
 

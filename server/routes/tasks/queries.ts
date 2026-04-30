@@ -8,6 +8,7 @@ import {
   practiceHistory,
   practiceLog,
   taskSpecs,
+  words,
 } from "@db";
 import type { LexemePos, TaskType } from "@shared";
 import { UNSPECIFIED_CEFR_LEVEL, normaliseString } from "../shared.js";
@@ -412,6 +413,86 @@ export async function findTaskIdByLexemeAndType(
 
   const fallbackId = getRowValue<string | null>(rows[0]! as RawTaskRow, "taskId", "id");
   return normaliseString(fallbackId) ?? null;
+}
+
+export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promise<string | null> {
+  const rawWordId = wordRef.startsWith("word_") ? wordRef.slice("word_".length) : wordRef;
+  const wordId = Number.parseInt(rawWordId, 10);
+  if (!Number.isInteger(wordId) || wordId <= 0) {
+    return null;
+  }
+
+  const wordRows = await executeSelectRaw<Record<string, unknown>>(
+    db
+      .select({
+        lemma: words.lemma,
+        pos: words.pos,
+      })
+      .from(words)
+      .where(eq(words.id, wordId))
+      .limit(1),
+  );
+
+  if (!wordRows.length) {
+    return null;
+  }
+
+  const wordRow = wordRows[0]! as RawTaskRow;
+  const lemma = normaliseString(getRowValue<string | null>(wordRow, "lemma"));
+  const lexemePos = mapLegacyWordPosToLexemePos(getRowValue<string | null>(wordRow, "pos"));
+  if (!lemma || !lexemePos) {
+    return null;
+  }
+
+  const taskRows = await executeSelectRaw<Record<string, unknown>>(
+    db
+      .select({ taskId: taskSpecs.id })
+      .from(taskSpecs)
+      .innerJoin(lexemes, eq(taskSpecs.lexemeId, lexemes.id))
+      .where(
+        and(
+          eq(taskSpecs.taskType, "vocabulary_drill"),
+          eq(lexemes.pos, lexemePos),
+          sql`lower(${lexemes.lemma}) = lower(${lemma})`,
+        ),
+      )
+      .limit(1),
+  );
+
+  if (!taskRows.length) {
+    return null;
+  }
+
+  return normaliseString(getRowValue<string | null>(taskRows[0]! as RawTaskRow, "taskId", "id")) ?? null;
+}
+
+function mapLegacyWordPosToLexemePos(pos: string | null | undefined): LexemePos | null {
+  switch (pos) {
+    case "V":
+      return "verb";
+    case "N":
+      return "noun";
+    case "Adj":
+      return "adjective";
+    case "Adv":
+      return "adverb";
+    case "Pron":
+      return "pronoun";
+    case "Det":
+      return "determiner";
+    case "Pr\u00e4p":
+      return "preposition";
+    case "Konj":
+      return "conjunction";
+    case "Num":
+      return "numeral";
+    case "Part":
+      return "particle";
+    case "Interj":
+      return "interjection";
+    default:
+      return null;
+  }
 }
 
 export type { TaskRow };
