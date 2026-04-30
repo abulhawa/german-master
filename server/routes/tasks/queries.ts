@@ -415,11 +415,24 @@ export async function findTaskIdByLexemeAndType(
   return normaliseString(fallbackId) ?? null;
 }
 
-export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promise<string | null> {
+export type LegacyVocabularyResolutionFailure =
+  | "invalid_word_ref"
+  | "word_not_found"
+  | "unsupported_pos"
+  | "lexeme_not_found"
+  | "task_spec_not_found";
+
+export type LegacyVocabularyResolutionResult =
+  | { taskId: string; lexemeId: string }
+  | { taskId: null; failure: LegacyVocabularyResolutionFailure };
+
+export async function resolveVocabularyTaskIdByLegacyWordId(
+  wordRef: string,
+): Promise<LegacyVocabularyResolutionResult> {
   const rawWordId = wordRef.startsWith("word_") ? wordRef.slice("word_".length) : wordRef;
   const wordId = Number.parseInt(rawWordId, 10);
   if (!Number.isInteger(wordId) || wordId <= 0) {
-    return null;
+    return { taskId: null, failure: "invalid_word_ref" };
   }
 
   const wordRows = await executeSelectRaw<Record<string, unknown>>(
@@ -434,24 +447,22 @@ export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promi
   );
 
   if (!wordRows.length) {
-    return null;
+    return { taskId: null, failure: "word_not_found" };
   }
 
   const wordRow = wordRows[0]! as RawTaskRow;
   const lemma = normaliseString(getRowValue<string | null>(wordRow, "lemma"));
   const lexemePos = mapLegacyWordPosToLexemePos(getRowValue<string | null>(wordRow, "pos"));
   if (!lemma || !lexemePos) {
-    return null;
+    return { taskId: null, failure: "unsupported_pos" };
   }
 
-  const taskRows = await executeSelectRaw<Record<string, unknown>>(
+  const lexemeRows = await executeSelectRaw<Record<string, unknown>>(
     db
-      .select({ taskId: taskSpecs.id })
-      .from(taskSpecs)
-      .innerJoin(lexemes, eq(taskSpecs.lexemeId, lexemes.id))
+      .select({ lexemeId: lexemes.id })
+      .from(lexemes)
       .where(
         and(
-          eq(taskSpecs.taskType, "vocabulary_drill"),
           eq(lexemes.pos, lexemePos),
           sql`lower(${lexemes.lemma}) = lower(${lemma})`,
         ),
@@ -459,11 +470,38 @@ export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promi
       .limit(1),
   );
 
-  if (!taskRows.length) {
-    return null;
+  if (!lexemeRows.length) {
+    return { taskId: null, failure: "lexeme_not_found" };
   }
 
-  return normaliseString(getRowValue<string | null>(taskRows[0]! as RawTaskRow, "taskId", "id")) ?? null;
+  const lexemeId = normaliseString(
+    getRowValue<string | null>(lexemeRows[0]! as RawTaskRow, "lexemeId", "lexeme_id", "id"),
+  );
+  if (!lexemeId) {
+    return { taskId: null, failure: "lexeme_not_found" };
+  }
+
+  const taskRows = await executeSelectRaw<Record<string, unknown>>(
+    db
+      .select({ taskId: taskSpecs.id })
+      .from(taskSpecs)
+      .where(and(eq(taskSpecs.lexemeId, lexemeId), eq(taskSpecs.taskType, "vocabulary_drill")))
+      .limit(1),
+  );
+
+  if (!taskRows.length) {
+    return { taskId: null, failure: "task_spec_not_found" };
+  }
+
+  const taskId =
+    normaliseString(getRowValue<string | null>(taskRows[0]! as RawTaskRow, "taskId", "id")) ??
+    null;
+  return taskId ? { taskId, lexemeId } : { taskId: null, failure: "task_spec_not_found" };
+}
+
+export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promise<string | null> {
+  const result = await resolveVocabularyTaskIdByLegacyWordId(wordRef);
+  return result.taskId;
 }
 
 function mapLegacyWordPosToLexemePos(pos: string | null | undefined): LexemePos | null {

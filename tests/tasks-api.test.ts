@@ -214,6 +214,41 @@ describe('tasks API', () => {
     }
   });
 
+  async function fetchFirstVocabularyTask(query = ''): Promise<any> {
+    const separator = query ? `&${query}` : '';
+    const response = await invokeApi(`/api/tasks?taskTypes=vocabulary_drill&limit=10${separator}`);
+    expect(response.status).toBe(200);
+    const task = ((response.bodyJson as any).tasks ?? [])[0];
+    expect(task).toBeDefined();
+    expect(task.taskType).toBe('vocabulary_drill');
+    return task;
+  }
+
+  async function insertLegacyWordForLemma(lemma: string): Promise<string> {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const insertedWord = await dbContext.pool.query<{ id: number }>(
+      [
+        'insert into words',
+        '(lemma, pos, level, english, gender, plural, approved, complete, sources_csv)',
+        'values ($1, $2, $3, $4, $5, $6, true, true, $7)',
+        'returning id',
+      ].join(' '),
+      [
+        lemma,
+        'N',
+        'B2 Beruf',
+        'employment contract',
+        'der',
+        'Arbeitsvertraege',
+        ANDROID_B2_BERUF_SOURCE,
+      ],
+    );
+    return `word_${insertedWord.rows[0]!.id}`;
+  }
+
   it('prunes tasks with unsupported types before serving requests', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
@@ -404,7 +439,7 @@ describe('tasks API', () => {
       user: { id: userId, role: 'standard' },
     } as any);
 
-    const taskResponse = await invokeApi('/api/tasks?pos=verb&limit=1');
+    const taskResponse = await invokeApi('/api/tasks?taskTypes=conjugate_form&pos=verb&limit=1');
     expect(taskResponse.status).toBe(200);
     const task = (taskResponse.bodyJson as any).tasks[0];
     expect(task).toBeDefined();
@@ -478,6 +513,50 @@ describe('tasks API', () => {
     });
   });
 
+  it('stores canonical vocabulary ids for direct web vocabulary submissions', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const task = await fetchFirstVocabularyTask(`level=B2&collection=${B2_BERUF_COLLECTION}`);
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: task.taskId,
+        lexemeId: task.lexeme.id,
+        taskType: 'vocabulary_drill',
+        pos: task.pos,
+        renderer: task.renderer,
+        deviceId: 'web-vocab-device-1',
+        result: 'correct',
+        submittedResponse: task.lexeme.lemma,
+        expectedResponse: task.solution?.english ?? 'employment contract',
+        timeSpentMs: 700,
+        cefrLevel: 'B2',
+      },
+    });
+
+    expect(submission.status).toBe(200);
+    expect((submission.bodyJson as any).taskId).toBe(task.taskId);
+
+    const history = await dbContext.pool.query(
+      [
+        'select task_id, lexeme_id, task_type from practice_history',
+        'where device_id = $1',
+      ].join(' '),
+      ['web-vocab-device-1'],
+    );
+
+    expect(history.rowCount).toBe(1);
+    expect(history.rows[0]).toMatchObject({
+      task_id: task.taskId,
+      lexeme_id: task.lexeme.id,
+      task_type: 'vocabulary_drill',
+    });
+    expect(history.rows[0]!.task_id).not.toMatch(/^word_/);
+    expect(history.rows[0]!.lexeme_id).not.toMatch(/^word_/);
+  });
+
   it('resolves legacy Wortschatz word ids to canonical vocabulary history', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
@@ -490,24 +569,7 @@ describe('tasks API', () => {
       user: { id: userId, role: 'standard' },
     } as any);
 
-    const insertedWord = await dbContext.pool.query<{ id: number }>(
-      [
-        'insert into words',
-        '(lemma, pos, level, english, gender, plural, approved, complete, sources_csv)',
-        'values ($1, $2, $3, $4, $5, $6, true, true, $7)',
-        'returning id',
-      ].join(' '),
-      [
-        'Arbeitsvertrag',
-        'N',
-        'B2 Beruf',
-        'employment contract',
-        'der',
-        'Arbeitsvertraege',
-        ANDROID_B2_BERUF_SOURCE,
-      ],
-    );
-    const legacyTaskId = `word_${insertedWord.rows[0]!.id}`;
+    const legacyTaskId = await insertLegacyWordForLemma('Arbeitsvertrag');
 
     const submission = await invokeApi('/api/submission', {
       method: 'POST',
@@ -549,6 +611,161 @@ describe('tasks API', () => {
     expect(canonicalRows.rows[0]!.lexeme_id).not.toMatch(/^word_/);
     expect(canonicalRows.rows[0]!.bridge_task_id).toBe(canonicalRows.rows[0]!.task_id);
     expect(canonicalRows.rows[0]!.bridge_lexeme_id).toBe(canonicalRows.rows[0]!.lexeme_id);
+
+    const leakedLegacyIds = await dbContext.pool.query(
+      [
+        'select count(*)::int as count from practice_history',
+        "where task_type = 'vocabulary_drill'",
+        "and (task_id like 'word_%' or lexeme_id like 'word_%')",
+      ].join(' '),
+    );
+    expect(leakedLegacyIds.rows[0]!.count).toBe(0);
+  });
+
+  it('resolves legacy Wortschatz lexeme ids to canonical device history', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const legacyWordRef = await insertLegacyWordForLemma('Arbeitsvertrag');
+    const canonicalTask = await fetchFirstVocabularyTask(`level=B2&collection=${B2_BERUF_COLLECTION}`);
+    const deviceId = 'legacy-lexeme-device-1';
+
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: 'missing-client-task-id',
+        lexemeId: legacyWordRef,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId,
+        result: 'correct',
+        submittedResponse: 'Arbeitsvertrag',
+        expectedResponse: 'employment contract',
+        timeSpentMs: 900,
+        cefrLevel: 'B2',
+      },
+    });
+
+    expect(submission.status).toBe(200);
+    expect((submission.bodyJson as any).taskId).toBe(canonicalTask.taskId);
+
+    const history = await dbContext.pool.query(
+      'select task_id, lexeme_id, user_id from practice_history where device_id = $1',
+      [deviceId],
+    );
+    expect(history.rowCount).toBe(1);
+    expect(history.rows[0]!.user_id).toBeNull();
+    expect(history.rows[0]!.task_id).toBe(canonicalTask.taskId);
+    expect(history.rows[0]!.lexeme_id).toBe(canonicalTask.lexeme.id);
+    expect(history.rows[0]!.task_id).not.toMatch(/^word_/);
+    expect(history.rows[0]!.lexeme_id).not.toMatch(/^word_/);
+  });
+
+  it('diagnoses unresolved legacy Wortschatz resolution failures by step', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const missingWord = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: 'word_999999',
+        lexemeId: 'word_999999',
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId: 'legacy-failure-device-1',
+        result: 'incorrect',
+        timeSpentMs: 100,
+      },
+    });
+    expect(missingWord.status).toBe(404);
+    expect((missingWord.bodyJson as any).details).toMatchObject({
+      legacyVocabularyResolutionFailure: 'word_not_found',
+    });
+
+    const unsupported = await dbContext.pool.query<{ id: number }>(
+      [
+        'insert into words',
+        '(lemma, pos, level, english, approved, complete)',
+        'values ($1, $2, $3, $4, true, true)',
+        'returning id',
+      ].join(' '),
+      ['Fehlerwort', 'Unsupported', 'B2', 'unsupported'],
+    );
+    const unsupportedResponse = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: `word_${unsupported.rows[0]!.id}`,
+        lexemeId: `word_${unsupported.rows[0]!.id}`,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId: 'legacy-failure-device-2',
+        result: 'incorrect',
+        timeSpentMs: 100,
+      },
+    });
+    expect(unsupportedResponse.status).toBe(404);
+    expect((unsupportedResponse.bodyJson as any).details).toMatchObject({
+      legacyVocabularyResolutionFailure: 'unsupported_pos',
+    });
+
+    const missingLexeme = await dbContext.pool.query<{ id: number }>(
+      [
+        'insert into words',
+        '(lemma, pos, level, english, approved, complete)',
+        'values ($1, $2, $3, $4, true, true)',
+        'returning id',
+      ].join(' '),
+      ['NichtVorhanden', 'N', 'B2', 'missing'],
+    );
+    const missingLexemeResponse = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: `word_${missingLexeme.rows[0]!.id}`,
+        lexemeId: `word_${missingLexeme.rows[0]!.id}`,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId: 'legacy-failure-device-3',
+        result: 'incorrect',
+        timeSpentMs: 100,
+      },
+    });
+    expect(missingLexemeResponse.status).toBe(404);
+    expect((missingLexemeResponse.bodyJson as any).details).toMatchObject({
+      legacyVocabularyResolutionFailure: 'lexeme_not_found',
+    });
+
+    const legacyWordRef = await insertLegacyWordForLemma('Arbeitsvertrag');
+    await dbContext.pool.query(
+      [
+        'delete from task_specs',
+        'where task_type = $1',
+        'and lexeme_id = (select id from lexemes where lower(lemma) = lower($2) limit 1)',
+      ].join(' '),
+      ['vocabulary_drill', 'Arbeitsvertrag'],
+    );
+    const missingTaskSpecResponse = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: legacyWordRef,
+        lexemeId: legacyWordRef,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId: 'legacy-failure-device-4',
+        result: 'incorrect',
+        timeSpentMs: 100,
+      },
+    });
+    expect(missingTaskSpecResponse.status).toBe(404);
+    expect((missingTaskSpecResponse.bodyJson as any).details).toMatchObject({
+      legacyVocabularyResolutionFailure: 'task_spec_not_found',
+    });
   });
 
   it('upserts practice log rows for both device and user aggregates', async () => {
@@ -564,7 +781,7 @@ describe('tasks API', () => {
       user: { id: userId, role: 'standard' },
     } as any);
 
-    const taskResponse = await invokeApi('/api/tasks?pos=verb&limit=1');
+    const taskResponse = await invokeApi('/api/tasks?taskTypes=conjugate_form&pos=verb&limit=1');
     expect(taskResponse.status).toBe(200);
     const task = (taskResponse.bodyJson as any).tasks[0];
     expect(task).toBeDefined();

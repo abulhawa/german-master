@@ -33,7 +33,8 @@ import {
   fetchTaskRowById,
   fetchTasksForTypes,
   findTaskIdByLexemeAndType,
-  findVocabularyTaskIdByLegacyWordId,
+  resolveVocabularyTaskIdByLegacyWordId,
+  type LegacyVocabularyResolutionFailure,
 } from "./queries.js";
 import { logStructured } from "../../logger.js";
 import { checkAnswerLeniency } from "../../services/groq-leniency.js";
@@ -335,6 +336,9 @@ export function createSubmitTaskHandler(): RequestHandler {
       return findTaskIdByLexemeAndType(payload.lexemeId, payload.taskType);
     };
 
+    let legacyVocabularyResolutionFailure: LegacyVocabularyResolutionFailure | null = null;
+    let legacyVocabularyWordRef: string | null = null;
+
     const resolveLegacyVocabularyTaskId = async (): Promise<string | null> => {
       if (payload.taskType !== "vocabulary_drill") {
         return null;
@@ -347,7 +351,18 @@ export function createSubmitTaskHandler(): RequestHandler {
           ? payload.lexemeId
           : null;
 
-      return legacyWordRef ? findVocabularyTaskIdByLegacyWordId(legacyWordRef) : null;
+      legacyVocabularyWordRef = legacyWordRef;
+      if (!legacyWordRef) {
+        return null;
+      }
+
+      const result = await resolveVocabularyTaskIdByLegacyWordId(legacyWordRef);
+      if (result.taskId === null) {
+        legacyVocabularyResolutionFailure = result.failure;
+        return null;
+      }
+
+      return result.taskId;
     };
 
     let resolvedTaskId = normaliseString(payload.taskId);
@@ -370,6 +385,29 @@ export function createSubmitTaskHandler(): RequestHandler {
     }
 
     if (!taskRow || !resolvedTaskId) {
+      if (legacyVocabularyResolutionFailure) {
+        logStructured({
+          event: "submission.legacy_vocabulary_resolution_failed",
+          level: "warn",
+          source: "submission",
+          data: {
+            submittedTaskId: payload.taskId,
+            submittedLexemeId: payload.lexemeId,
+            legacyWordRef: legacyVocabularyWordRef,
+            failure: legacyVocabularyResolutionFailure,
+            deviceId: payload.deviceId ?? null,
+          },
+        });
+
+        return res.status(404).json({
+          error: "Task not found",
+          code: "TASK_NOT_FOUND",
+          details: {
+            legacyVocabularyResolutionFailure,
+          },
+        });
+      }
+
       return sendError(res, 404, "Task not found", "TASK_NOT_FOUND");
     }
 
