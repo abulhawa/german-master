@@ -1,5 +1,6 @@
 import type { PartOfSpeech } from '@shared';
 import { type LexemePos } from '@shared/task-registry';
+import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '@shared/content-sources';
 
 import { generateTaskSpecs, type TaskTemplateSource } from '../../../server/tasks/templates.ts';
 
@@ -94,13 +95,16 @@ function createLexemeSeed(word: AggregatedWord): LexemeSeed {
   const idHash = sha1(`${pos}:${lemmaSlug}:${primarySource}`);
   const lexemeId = `de:${pos}:${lemmaSlug}:${idHash.slice(0, 8)}`;
 
+  const collections = getCollections(word);
+  const level = canonicalLevel(word);
   const metadata: Record<string, unknown> = {
-    level: word.level ?? undefined,
+    level: level ?? undefined,
     english: word.english ?? undefined,
     example: normaliseExample(word.exampleDe, word.exampleEn),
     separable: word.separable ?? undefined,
     auxiliary: word.aux ?? undefined,
     perfekt: word.perfekt ?? undefined,
+    collections: collections.length ? collections : undefined,
   };
 
   const tags = word.posAttributes?.tags ?? null;
@@ -308,7 +312,8 @@ function createTaskSourceFromWord(word: AggregatedWord, lexemeId: string): TaskT
     lexemeId,
     lemma: word.lemma,
     pos,
-    level: word.level ?? null,
+    level: canonicalLevel(word),
+    collections: getCollections(word),
     english: word.english ?? null,
     exampleDe: word.exampleDe ?? null,
     exampleEn: word.exampleEn ?? null,
@@ -324,6 +329,27 @@ function createTaskSourceFromWord(word: AggregatedWord, lexemeId: string): TaskT
     comparative: word.comparative ?? null,
     superlative: word.superlative ?? null,
   } satisfies TaskTemplateSource;
+}
+
+function canonicalLevel(word: AggregatedWord): string | null {
+  return hasSourceTag(word, ANDROID_B2_BERUF_SOURCE) || word.level === 'B2 Beruf'
+    ? 'B2'
+    : word.level ?? null;
+}
+
+function getCollections(word: AggregatedWord): string[] {
+  const collections = new Set<string>();
+  if (hasSourceTag(word, ANDROID_B2_BERUF_SOURCE) || word.level === 'B2 Beruf') {
+    collections.add(B2_BERUF_COLLECTION);
+  }
+  return Array.from(collections).sort();
+}
+
+function hasSourceTag(word: AggregatedWord, source: string): boolean {
+  return (word.sourcesCsv ?? '')
+    .split(';')
+    .map((value) => value.trim())
+    .includes(source);
 }
 
 function createInflectionEntries(

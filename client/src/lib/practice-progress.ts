@@ -29,6 +29,7 @@ function createEmptyTotals(): Record<TaskType, TaskProgressSummary> {
     noun_case_declension: { ...EMPTY_SUMMARY, lexemes: {} },
     adj_ending: { ...EMPTY_SUMMARY, lexemes: {} },
     b2_writing_prompt: { ...EMPTY_SUMMARY, lexemes: {} },
+    vocabulary_drill: { ...EMPTY_SUMMARY, lexemes: {} },
   };
 }
 

@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { eq, inArray, sql, notInArray, type SQL } from "drizzle-orm";
+import { eq, inArray, or, sql, notInArray, type SQL } from "drizzle-orm";
 import type { LexemePos, TaskType } from "@shared";
 import {
   db,
@@ -104,6 +104,7 @@ export function createListTasksHandler(): RequestHandler {
         deviceId,
         shuffleSeed,
         level,
+        collection,
         excludeTaskIds: excludeTaskIdsRaw,
       } = parsed.data;
       const filters: SQL[] = [];
@@ -180,6 +181,29 @@ export function createListTasksHandler(): RequestHandler {
         );
       }
 
+      const requestedCollectionsRaw = Array.isArray(collection)
+        ? collection
+        : typeof collection === "string"
+        ? [collection]
+        : [];
+      const requestedCollections = Array.from(
+        new Set(
+          requestedCollectionsRaw
+            .map((value) => normaliseString(value))
+            .filter((value): value is string => Boolean(value)),
+        ),
+      );
+
+      if (requestedCollections.length > 0) {
+        const collectionFilters = requestedCollections.map((requestedCollection) =>
+          sql`coalesce(${lexemes.metadata} -> 'collections', '[]'::jsonb) @> ${JSON.stringify([requestedCollection])}::jsonb`,
+        );
+        const collectionFilter = or(...collectionFilters);
+        if (collectionFilter) {
+          filters.push(collectionFilter);
+        }
+      }
+
       const sessionUserId = getSessionUserId(req.authSession);
       const recencyThreshold = new Date(Date.now() - RECENT_ATTEMPT_WINDOW_MS);
 
@@ -188,6 +212,7 @@ export function createListTasksHandler(): RequestHandler {
         taskTypes: resolvedTaskTypes,
         normalisedPos,
         requestedLevels,
+        requestedCollections,
         sessionUserId,
         deviceId,
         shuffleSeed,

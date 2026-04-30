@@ -457,7 +457,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'adverb', updatedAt: updatedTimestamp })
+      .set({ pos: 'unsupported_pos', updatedAt: updatedTimestamp })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();
@@ -492,7 +492,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'adverb', updatedAt: new Date(Date.now() + 1000) })
+      .set({ pos: 'unsupported_pos', updatedAt: new Date(Date.now() + 1000) })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();

@@ -21,6 +21,7 @@ export const TASK_TYPE_TO_SCOPE: Record<TaskType, PracticeScope> = {
   noun_case_declension: 'nouns',
   adj_ending: 'adjectives',
   b2_writing_prompt: 'custom',
+  vocabulary_drill: 'custom',
 };
 
 export const SCOPE_LABELS: Record<PracticeScope, string> = {

@@ -14,6 +14,7 @@ export const taskQuerySchema = z.object({
   deviceId: z.string().trim().min(6).max(64).optional(),
   shuffleSeed: z.string().trim().min(1).max(128).optional(),
   level: z.union([levelSchema, z.array(levelSchema)]).optional(),
+  collection: multiStringSchema.optional(),
   excludeTaskIds: multiStringSchema.optional(),
 });
 

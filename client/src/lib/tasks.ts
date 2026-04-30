@@ -41,6 +41,7 @@ export interface TaskFetchOptions {
   signal?: AbortSignal;
   deviceId?: string;
   level?: CEFRLevel | CEFRLevel[];
+  collection?: string | string[];
   excludeTaskIds?: string[];
   shuffleSeed?: string;
 }
@@ -119,6 +120,15 @@ function buildTasksQuery(options: TaskFetchOptions): string {
       }
     } else {
       params.set('level', options.level);
+    }
+  }
+  if (options.collection) {
+    if (Array.isArray(options.collection)) {
+      for (const collection of options.collection) {
+        params.append('collection', collection);
+      }
+    } else {
+      params.set('collection', options.collection);
     }
   }
   if (options.excludeTaskIds?.length) {

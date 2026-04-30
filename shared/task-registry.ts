@@ -77,6 +77,37 @@ export const b2WritingSolutionSchema = z.object({
   grammarFocus: z.string().min(1),
 });
 
+export const vocabularyDrillPromptSchema = z.object({
+  lemma: z.string().min(1),
+  pos: z.enum([
+    'verb',
+    'noun',
+    'adjective',
+    'adverb',
+    'pronoun',
+    'determiner',
+    'preposition',
+    'conjunction',
+    'numeral',
+    'particle',
+    'interjection',
+  ]),
+  cefrLevel: z.string().optional(),
+  collections: z.array(z.string().min(1)).optional(),
+  instructions: z.string().min(1),
+  example: z
+    .object({
+      de: z.string().optional(),
+      en: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const vocabularyDrillSolutionSchema = z.object({
+  answer: z.string().min(1),
+  english: z.string().min(1),
+});
+
 export type LexemePos =
   | 'verb'
   | 'noun'
@@ -131,6 +162,26 @@ export const taskTypeRegistry = {
     promptSchema: b2WritingPromptSchema,
     solutionSchema: b2WritingSolutionSchema,
     defaultQueueCap: 3,
+  },
+  vocabulary_drill: {
+    taskType: 'vocabulary_drill',
+    supportedPos: [
+      'verb',
+      'noun',
+      'adjective',
+      'adverb',
+      'pronoun',
+      'determiner',
+      'preposition',
+      'conjunction',
+      'numeral',
+      'particle',
+      'interjection',
+    ],
+    renderer: 'word_card',
+    promptSchema: vocabularyDrillPromptSchema,
+    solutionSchema: vocabularyDrillSolutionSchema,
+    defaultQueueCap: 50,
   },
 } as const satisfies Record<string, TaskRegistryEntryBase>;
 

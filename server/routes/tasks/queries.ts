@@ -138,6 +138,7 @@ export type TaskListQueryOptions = {
   taskTypes: TaskType[];
   normalisedPos: LexemePos | null;
   requestedLevels: string[];
+  requestedCollections: string[];
   sessionUserId: string | null;
   deviceId: string | null | undefined;
   shuffleSeed?: string | null;
@@ -320,7 +321,7 @@ export async function fetchTasksForTypes(
   options: TaskListQueryOptions & { limit: number },
 ): Promise<TaskRow[]> {
   const cacheTtlMs = Number(process.env.TASK_QUERY_CACHE_TTL_MS ?? 1000);
-  const cacheKey = `${(options.taskTypes || []).join(',')}|${options.deviceId ?? ''}|${options.sessionUserId ?? ''}|${options.requestedLevels.join(',')}|${options.normalisedPos ?? ''}|${options.limit}|${normaliseShuffleSeed(options.shuffleSeed) ?? ''}`;
+  const cacheKey = `${(options.taskTypes || []).join(',')}|${options.deviceId ?? ''}|${options.sessionUserId ?? ''}|${options.requestedLevels.join(',')}|${options.requestedCollections.join(',')}|${options.normalisedPos ?? ''}|${options.limit}|${normaliseShuffleSeed(options.shuffleSeed) ?? ''}`;
   const shouldCache = !options.deviceId && !options.sessionUserId;
 
   if (shouldCache) {

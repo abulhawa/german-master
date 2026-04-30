@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 import {
   taskTypeRegistry,
   validateTaskAgainstRegistry,
@@ -13,6 +14,7 @@ export interface TaskTemplateSource {
   lemma: string;
   pos: LexemePos;
   level: string | null;
+  collections?: string[];
   english: string | null;
   exampleDe: string | null;
   exampleEn: string | null;
@@ -51,6 +53,20 @@ interface TaskTemplateDefinition {
   buildMetadata?(source: TaskTemplateSource): Record<string, unknown> | null | undefined;
   buildHints?(source: TaskTemplateSource): unknown[];
 }
+
+const VOCABULARY_SUPPORTED_POS = new Set<LexemePos>([
+  'verb',
+  'noun',
+  'adjective',
+  'adverb',
+  'pronoun',
+  'determiner',
+  'preposition',
+  'conjunction',
+  'numeral',
+  'particle',
+  'interjection',
+]);
 
 const TASK_TEMPLATE_REGISTRY: Partial<Record<LexemePos, readonly TaskTemplateDefinition[]>> = {
   verb: [
@@ -253,13 +269,77 @@ function buildHints(source: TaskTemplateSource): unknown[] {
   return hints;
 }
 
+function normaliseCollections(source: TaskTemplateSource): string[] {
+  if (Array.isArray(source.collections)) {
+    return Array.from(
+      new Set(source.collections.map((collection) => collection.trim()).filter(Boolean)),
+    ).sort();
+  }
+  if (source.level === 'B2 Beruf') {
+    return [B2_BERUF_COLLECTION];
+  }
+  return [];
+}
+
+function canonicalLevel(source: TaskTemplateSource): string | null {
+  if (source.level === 'B2 Beruf') {
+    return 'B2';
+  }
+  return source.level;
+}
+
+function buildVocabularyDrillTask(source: TaskTemplateSource): GeneratedTaskSpec | null {
+  if (!source.english || !VOCABULARY_SUPPORTED_POS.has(source.pos)) {
+    return null;
+  }
+
+  const registryEntry: TaskRegistryEntry | undefined = taskTypeRegistry.vocabulary_drill;
+  if (!registryEntry) {
+    return null;
+  }
+
+  const collections = normaliseCollections(source);
+  const prompt = pruneUndefined({
+    lemma: source.lemma,
+    pos: source.pos,
+    cefrLevel: canonicalLevel(source) ?? undefined,
+    collections: collections.length ? collections : undefined,
+    instructions: `Review the meaning of "${source.lemma}".`,
+    example: normaliseExample(source.exampleDe, source.exampleEn),
+  });
+  const solution = {
+    answer: source.lemma,
+    english: source.english,
+  };
+
+  validateTaskAgainstRegistry('vocabulary_drill', source.pos, registryEntry.renderer, prompt, solution);
+
+  return {
+    id: createTaskId(source.lexemeId, 'vocabulary_drill', 1, 'word_card'),
+    lexemeId: source.lexemeId,
+    pos: source.pos,
+    taskType: 'vocabulary_drill',
+    renderer: registryEntry.renderer,
+    prompt,
+    solution,
+    hints: buildHints(source),
+    metadata: {
+      interaction: 'self_grade',
+      ...(collections.length ? { collections } : {}),
+      ...(canonicalLevel(source) ? { level: canonicalLevel(source) } : {}),
+    },
+    revision: 1,
+  };
+}
+
 export function generateTaskSpecs(source: TaskTemplateSource): GeneratedTaskSpec[] {
   const templates = TASK_TEMPLATE_REGISTRY[source.pos] ?? [];
-  if (templates.length === 0) {
+  const vocabularyTask = buildVocabularyDrillTask(source);
+  if (templates.length === 0 && !vocabularyTask) {
     return [];
   }
 
-  const tasks: GeneratedTaskSpec[] = [];
+  const tasks: GeneratedTaskSpec[] = vocabularyTask ? [vocabularyTask] : [];
   let revision = 0;
 
   for (const template of templates) {

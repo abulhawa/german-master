@@ -10,10 +10,24 @@ export function primarySourceId(word: AggregatedWord): string {
 export function collectSources(word: AggregatedWord): string[] {
   const sources = new Set<string>();
   sources.add(primarySourceId(word));
+  for (const source of splitDelimitedSources(word.sourcesCsv)) {
+    sources.add(source);
+  }
   if (word.enrichmentMethod) {
     sources.add(enrichmentSourceId(word.enrichmentMethod));
   }
   return Array.from(sources);
+}
+
+function splitDelimitedSources(value: string | null | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(';')
+    .map((source) => source.trim())
+    .filter((source) => source.length > 0);
 }
 
 export function deriveSourceRevision(word: AggregatedWord): string {

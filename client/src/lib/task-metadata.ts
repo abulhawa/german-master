@@ -39,6 +39,12 @@ export const TASK_TYPE_COPY: Record<TaskType, TaskCopy> = {
     posLabel: 'B2 writing',
     pos: 'verb',
   },
+  vocabulary_drill: {
+    label: 'Vocabulary drill',
+    description: 'Review vocabulary with a self-graded word card.',
+    posLabel: 'Vocabulary',
+    pos: 'noun',
+  },
 };
 
 export function getTaskTypeCopy(taskType: TaskType): TaskCopy {

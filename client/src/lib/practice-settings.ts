@@ -31,6 +31,7 @@ export function createDefaultSettings(): PracticeSettingsState {
       noun_case_declension: { ...DEFAULT_RENDERER_PREFS },
       adj_ending: { ...DEFAULT_RENDERER_PREFS },
       b2_writing_prompt: { ...DEFAULT_RENDERER_PREFS },
+      vocabulary_drill: { ...DEFAULT_RENDERER_PREFS },
     },
     legacyVerbLevel: 'A1',
     migratedFromLegacy: false,
@@ -101,6 +102,7 @@ function normaliseSettings(parsed: PracticeSettingsState): PracticeSettingsState
     'conjugate_form',
     'noun_case_declension',
     'adj_ending',
+    'vocabulary_drill',
   ]);
   const preferredTaskTypes = Array.isArray(parsed.preferredTaskTypes)
     ? parsed.preferredTaskTypes.filter((taskType): taskType is TaskType => availableTaskTypes.has(taskType))

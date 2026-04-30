@@ -40,7 +40,19 @@ const LOG_SOURCE = 'task-sync';
 const METRIC_DURATION_NAME = 'task_sync_duration_ms';
 const METRIC_ERROR_NAME = 'task_sync_error_total';
 
-const SUPPORTED_POS: readonly LexemePos[] = ['verb', 'noun', 'adjective'];
+const SUPPORTED_POS: readonly LexemePos[] = [
+  'verb',
+  'noun',
+  'adjective',
+  'adverb',
+  'pronoun',
+  'determiner',
+  'preposition',
+  'conjunction',
+  'numeral',
+  'particle',
+  'interjection',
+];
 const INSERT_CHUNK_SIZE = 500;
 const DELETE_CHUNK_SIZE = 500;
 

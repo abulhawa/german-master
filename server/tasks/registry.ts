@@ -45,6 +45,14 @@ export const taskRegistry: Record<TaskType, ServerTaskRegistryEntry> = {
       normalise: true,
     },
   },
+  vocabulary_drill: {
+    ...sharedRegistry.vocabulary_drill,
+    queueCap: 50,
+    evaluation: {
+      strategy: 'string-equality',
+      normalise: true,
+    },
+  },
 };
 
 export function getTaskRegistryEntry(taskType: TaskType): ServerTaskRegistryEntry {

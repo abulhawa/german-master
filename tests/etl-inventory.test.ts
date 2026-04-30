@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLexemeInventory } from '../scripts/etl/golden';
+import { buildLexemeInventory, buildTaskInventory } from '../scripts/etl/golden';
 import { validateWord } from '../scripts/etl/validators';
+import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '@shared/content-sources';
 import type { AggregatedWord } from '../scripts/etl/types';
 
 function createVerb(): AggregatedWord {
@@ -177,6 +178,39 @@ describe('buildLexemeInventory', () => {
     );
     expect(prepositionInflections[0]?.features.governedCases).toEqual(['Akkusativ']);
     expect(prepositionInflections[0]?.sourceRevision).toMatch(/^pos_jsonl:prepositions:/);
+  });
+
+  it('canonicalizes B2 Beruf lexemes and vocabulary drill tasks', () => {
+    const word = createNoun();
+    word.lemma = 'Arbeitsvertrag';
+    word.level = 'B2 Beruf';
+    word.sourcesCsv = ANDROID_B2_BERUF_SOURCE;
+
+    const lexemeInventory = buildLexemeInventory([word]);
+    const taskInventory = buildTaskInventory([word]);
+    const lexeme = lexemeInventory.lexemes[0];
+    const vocabularyTask = taskInventory.tasks.find((task) => task.taskType === 'vocabulary_drill');
+
+    expect(lexeme?.metadata).toMatchObject({
+      level: 'B2',
+      collections: [B2_BERUF_COLLECTION],
+    });
+    expect(lexeme?.sourceIds).toContain(ANDROID_B2_BERUF_SOURCE);
+    expect(vocabularyTask).toMatchObject({
+      lexemeId: lexeme?.id,
+      taskType: 'vocabulary_drill',
+      renderer: 'word_card',
+      revision: 1,
+      metadata: {
+        interaction: 'self_grade',
+        level: 'B2',
+        collections: [B2_BERUF_COLLECTION],
+      },
+    });
+    expect(vocabularyTask?.prompt).toMatchObject({
+      cefrLevel: 'B2',
+      collections: [B2_BERUF_COLLECTION],
+    });
   });
 });
 

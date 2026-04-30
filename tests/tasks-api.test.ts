@@ -2,6 +2,7 @@ import { getSessionFromRequestMock } from './helpers/mock-auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AggregatedWord } from '../scripts/etl/types';
+import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '../shared/content-sources';
 import { setupTestDatabase, type TestDatabaseContext } from './helpers/pg';
 import { createApiInvoker } from './helpers/vercel';
 
@@ -155,6 +156,33 @@ describe('tasks API', () => {
       enrichmentAppliedAt: null,
       enrichmentMethod: null,
     },
+    {
+      lemma: 'Arbeitsvertrag',
+      pos: 'N',
+      level: 'B2 Beruf',
+      english: 'employment contract',
+      exampleDe: 'Der Arbeitsvertrag regelt die Probezeit.',
+      exampleEn: 'The employment contract defines the probation period.',
+      gender: 'der',
+      plural: 'Arbeitsvertraege',
+      separable: null,
+      aux: null,
+      praesensIch: null,
+      praesensEr: null,
+      praeteritum: null,
+      partizipIi: null,
+      perfekt: null,
+      comparative: null,
+      superlative: null,
+      approved: true,
+      complete: true,
+      translations: null,
+      examples: null,
+      posAttributes: null,
+      enrichmentAppliedAt: null,
+      enrichmentMethod: null,
+      sourcesCsv: ANDROID_B2_BERUF_SOURCE,
+    },
   ];
 
     ({ seedLexemeInventoryForWords } = await import('./helpers/task-fixtures'));
@@ -249,6 +277,32 @@ describe('tasks API', () => {
       expect(resolvedLevel).not.toBeNull();
       expect(['B1', 'B2']).toContain(resolvedLevel);
     }
+  });
+
+  it('filters vocabulary drill tasks by B2 Beruf collection separately from level', async () => {
+    const berufResponse = await invokeApi(
+      `/api/tasks?taskTypes=vocabulary_drill&level=B2&collection=${B2_BERUF_COLLECTION}&limit=10`,
+    );
+    expect(berufResponse.status).toBe(200);
+
+    const berufTasks = ((berufResponse.bodyJson as any).tasks ?? []) as any[];
+    expect(berufTasks.length).toBeGreaterThan(0);
+    expect(berufTasks.every((task) => task.taskType === 'vocabulary_drill')).toBe(true);
+    expect(berufTasks.some((task) => task.lexeme?.lemma === 'Arbeitsvertrag')).toBe(true);
+    for (const task of berufTasks) {
+      expect(task.prompt?.cefrLevel).toBe('B2');
+      expect(task.prompt?.collections).toContain(B2_BERUF_COLLECTION);
+      expect(task.lexeme?.metadata?.level).toBe('B2');
+      expect(task.lexeme?.metadata?.collections).toContain(B2_BERUF_COLLECTION);
+    }
+
+    const allB2Response = await invokeApi('/api/tasks?taskTypes=vocabulary_drill&level=B2&limit=10');
+    expect(allB2Response.status).toBe(200);
+    const allB2Lemmas = (((allB2Response.bodyJson as any).tasks ?? []) as any[]).map(
+      (task) => task.lexeme?.lemma,
+    );
+    expect(allB2Lemmas).toContain('Arbeitsvertrag');
+    expect(allB2Lemmas).toContain('Projekt');
   });
 
   it('keeps seeded ordering stable and varies order for different seeds', async () => {

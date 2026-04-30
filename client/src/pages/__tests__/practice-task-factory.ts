@@ -6,6 +6,7 @@ const createTaskCounters = (): Record<TaskType, number> => ({
   noun_case_declension: 0,
   adj_ending: 0,
   b2_writing_prompt: 0,
+  vocabulary_drill: 0,
 });
 
 let taskTypeCounters = createTaskCounters();
@@ -125,6 +126,33 @@ export function buildPracticeTask<T extends TaskType>(
         assignedAt: new Date().toISOString(),
         source: 'seed',
       } satisfies PracticeTask<'b2_writing_prompt'> as PracticeTask<T>;
+    case 'vocabulary_drill':
+      return {
+        taskId: baseId,
+        lexemeId: `lex-${baseId}`,
+        taskType,
+        pos: 'noun',
+        renderer: entry.renderer,
+        prompt: {
+          lemma: `Wort-${sequence}-${index}`,
+          pos: 'noun',
+          cefrLevel: 'B2',
+          collections: ['b2_beruf'],
+          instructions: `Review the meaning of "Wort-${sequence}-${index}".`,
+        },
+        expectedSolution: {
+          answer: `Wort-${sequence}-${index}`,
+          english: `word-${sequence}-${index}`,
+        },
+        queueCap: entry.defaultQueueCap,
+        lexeme: {
+          id: `lex-${baseId}`,
+          lemma: `Wort-${sequence}-${index}`,
+          metadata: { level: 'B2', collections: ['b2_beruf'] },
+        },
+        assignedAt: new Date().toISOString(),
+        source: 'seed',
+      } satisfies PracticeTask<'vocabulary_drill'> as PracticeTask<T>;
     default:
       throw new Error(`Unsupported task type: ${taskType}`);
   }

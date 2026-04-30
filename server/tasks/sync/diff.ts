@@ -255,6 +255,7 @@ function buildTaskSource(
     lemma: lexeme.lemma,
     pos,
     level: toOptionalString(metadata.level),
+    collections: toStringList(metadata.collections),
     english: toOptionalString(metadata.english),
     exampleDe,
     exampleEn,
@@ -550,6 +551,20 @@ function toOptionalString(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
+function toStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+        .filter((entry) => entry.length > 0),
+    ),
+  ).sort();
+}
+
 function toOptionalBoolean(value: unknown): boolean | null {
   if (value === undefined || value === null) {
     return null;
@@ -641,7 +656,19 @@ export function asLexemePos(value: string | null | undefined): LexemePos | null 
   if (!normalised) {
     return null;
   }
-  if (normalised === 'verb' || normalised === 'noun' || normalised === 'adjective') {
+  if (
+    normalised === 'verb' ||
+    normalised === 'noun' ||
+    normalised === 'adjective' ||
+    normalised === 'adverb' ||
+    normalised === 'pronoun' ||
+    normalised === 'determiner' ||
+    normalised === 'preposition' ||
+    normalised === 'conjunction' ||
+    normalised === 'numeral' ||
+    normalised === 'particle' ||
+    normalised === 'interjection'
+  ) {
     return normalised as LexemePos;
   }
   return null;
