@@ -235,6 +235,7 @@ export interface HomeMessages {
   b2BerufCollection: {
     title: string;
     description: string;
+    cta: string;
   };
   b2Countdown: {
     upcoming: string;
@@ -483,6 +484,7 @@ const MESSAGES: Record<Locale, AppMessages> = {
       b2BerufCollection: {
         title: 'B2 Beruf collection',
         description: 'This is a Beruf vocabulary collection within CEFR B2, loaded with the canonical vocabulary task feed.',
+        cta: 'Practice B2 Beruf',
       },
       b2Countdown: {
         upcoming: '📅 B2 in {days} days',
@@ -936,6 +938,7 @@ const MESSAGES: Record<Locale, AppMessages> = {
       b2BerufCollection: {
         title: 'B2-Beruf-Sammlung',
         description: 'Das ist eine Beruf-Wortschatzsammlung innerhalb von B2, geladen über den kanonischen Aufgaben-Feed.',
+        cta: 'B2 Beruf üben',
       },
       b2Countdown: {
         upcoming: '📅 B2 in {days} Tagen',

@@ -183,13 +183,18 @@ describe('Home navigation - practice workflows', () => {
 
     renderHome();
 
+    const quickStartButton = await screen.findByRole('button', { name: 'Practice B2 Beruf' });
+    expect(quickStartButton).toBeInTheDocument();
+    expect(screen.queryByText(/Writing Lab/i)).not.toBeInTheDocument();
+
     const scopeButton = await screen.findByRole('button', { name: /adjust practice scope/i });
     await userEvent.click(scopeButton);
 
     const b2BerufTab = await screen.findByRole('tab', { name: 'B2 Beruf' });
     expect(b2BerufTab).toBeInTheDocument();
 
-    await userEvent.click(b2BerufTab);
+    mockFetchPracticeTasks.mockClear();
+    await userEvent.click(quickStartButton);
 
     await waitFor(() => {
       expect(mockFetchPracticeTasks).toHaveBeenCalledWith(
@@ -205,7 +210,6 @@ describe('Home navigation - practice workflows', () => {
     expect(await screen.findByText('B2 Beruf collection')).toBeInTheDocument();
     expect(screen.getByText(/Beruf vocabulary collection within CEFR B2/i)).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /verb level/i })).not.toBeInTheDocument();
-    expect(screen.queryByText(/Writing Lab/i)).not.toBeInTheDocument();
   });
 
   it('reshuffles exhausted queues when manually reloading', async () => {

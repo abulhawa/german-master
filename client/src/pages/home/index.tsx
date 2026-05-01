@@ -1,6 +1,6 @@
 import { useCallback, useId, useMemo, useState, useEffect } from 'react';
 import { Link } from 'wouter';
-import { History, Loader2 } from 'lucide-react';
+import { Briefcase, History, Loader2 } from 'lucide-react';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { MobileNavBar } from '@/components/layout/mobile-nav-bar';
@@ -350,6 +350,28 @@ export default function Home() {
     </div>
   );
 
+  const b2BerufEntryCard = !isB2BerufScope ? (
+    <section className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-soft shadow-primary/5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Briefcase className="h-5 w-5" aria-hidden />
+        </div>
+        <div className="min-w-0 space-y-1">
+          <h2 className="text-base font-semibold text-foreground">{translations.home.b2BerufCollection.title}</h2>
+          <p className="text-sm text-muted-foreground">{translations.home.b2BerufCollection.description}</p>
+        </div>
+      </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="mt-4 w-full rounded-2xl"
+        onClick={() => handleScopeChange('b2Beruf')}
+      >
+        {translations.home.b2BerufCollection.cta}
+      </Button>
+    </section>
+  ) : null;
+
   return (
     <div id={HOME_SECTION_IDS.page}>
       <AppShell
@@ -460,6 +482,7 @@ export default function Home() {
                 </div>
               </div>
               <aside className="flex flex-col gap-4">
+                {b2BerufEntryCard}
                 <PracticeHistoryCard
                   history={answerHistory}
                   isOpen={isRecapOpen}
