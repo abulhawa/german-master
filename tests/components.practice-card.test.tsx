@@ -24,6 +24,7 @@ function createTask(): PracticeTask<'conjugate_form'> {
     taskType: 'conjugate_form',
     pos: 'verb',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       lemma: 'gehen',
       pos: 'verb',
@@ -50,6 +51,7 @@ function createNounTask(): PracticeTask<'noun_case_declension'> {
     taskType: 'noun_case_declension',
     pos: 'noun',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       lemma: 'Haus',
       pos: 'noun',
@@ -78,6 +80,7 @@ function createDativeNounTask(): PracticeTask<'noun_case_declension'> {
     taskType: 'noun_case_declension',
     pos: 'noun',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       lemma: 'Kind',
       pos: 'noun',
@@ -106,6 +109,7 @@ function createAdjectiveTask(): PracticeTask<'adj_ending'> {
     taskType: 'adj_ending',
     pos: 'adjective',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       lemma: 'schnell',
       pos: 'adjective',
@@ -133,6 +137,7 @@ function createEszettAdjectiveTask(): PracticeTask<'adj_ending'> {
     taskType: 'adj_ending',
     pos: 'adjective',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       lemma: 'heiß',
       pos: 'adjective',
@@ -160,6 +165,7 @@ function createB2WritingTask(): PracticeTask<'b2_writing_prompt'> {
     taskType: 'b2_writing_prompt',
     pos: 'verb',
     renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
     prompt: {
       scenario: 'Ihr Kollege bittet Sie um eine Stellungnahme zum neuen Projektplan.',
       wordBankItems: ['wuerde', 'meiner Meinung nach', 'jedoch', 'koennten Sie'],

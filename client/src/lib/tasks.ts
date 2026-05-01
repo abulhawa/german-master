@@ -3,6 +3,7 @@ import {
   taskTypeRegistry as sharedTaskRegistry,
   validateTaskAgainstRegistry,
   type LexemePos,
+  type TaskInteractionMode,
   type TaskRegistry,
   type TaskRegistryEntry,
   type TaskType,
@@ -21,6 +22,7 @@ export interface PracticeTask<T extends TaskType = TaskType> {
   taskType: T;
   pos: LexemePos;
   renderer: (typeof sharedTaskRegistry)[T]['renderer'];
+  interactionMode: TaskInteractionMode;
   prompt: TaskPrompt<T>;
   expectedSolution?: TaskSolution<T>;
   queueCap: number;
@@ -50,6 +52,7 @@ const rawTaskSchema = z.object({
   taskId: z.string().min(1),
   taskType: z.string().min(1),
   renderer: z.string().min(1),
+  interactionMode: z.enum(['choice', 'typed', 'self_grade', 'writing']).optional(),
   pos: z.string().min(1),
   prompt: z.unknown(),
   solution: z.unknown().optional(),
@@ -85,6 +88,7 @@ function mapTaskPayload(task: RawTaskPayload): PracticeTask {
     taskType: validation.taskType,
     pos: validation.pos,
     renderer: validation.renderer,
+    interactionMode: task.interactionMode ?? registryEntry.interactionMode,
     prompt,
     expectedSolution: solution,
     queueCap: task.queueCap,

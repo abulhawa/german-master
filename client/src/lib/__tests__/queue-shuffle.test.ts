@@ -11,6 +11,7 @@ function buildTask(taskId: string): PracticeTask<'conjugate_form'> {
     taskType: 'conjugate_form',
     pos: 'verb',
     renderer: 'conjugate_form',
+    interactionMode: 'typed',
     prompt: {
       lemma: `lemma-${taskId}`,
       pos: 'verb',

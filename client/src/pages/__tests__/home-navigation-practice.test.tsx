@@ -297,7 +297,7 @@ describe('Home navigation - practice workflows', () => {
     });
   });
 
-  it('keeps B2 word practice separate and exposes writing in navigation', async () => {
+  it('keeps B2 word practice separate and hides writing from primary navigation by default', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-04-02T12:00:00.000Z'));
 
@@ -332,7 +332,7 @@ describe('Home navigation - practice workflows', () => {
       expect(screen.getByText(/B2 in \d+ days/)).toBeInTheDocument();
       expect(screen.queryByRole('tab', { name: /writing/i })).not.toBeInTheDocument();
       expect(screen.queryByText(/Writing Lab/i)).not.toBeInTheDocument();
-      expect(screen.getAllByRole('link', { name: /writing/i }).length).toBeGreaterThan(0);
+      expect(screen.queryByRole('link', { name: /writing/i })).not.toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

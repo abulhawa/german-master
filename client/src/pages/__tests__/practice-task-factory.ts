@@ -35,6 +35,7 @@ export function buildPracticeTask<T extends TaskType>(
         taskType,
         pos: 'verb',
         renderer: entry.renderer,
+        interactionMode: entry.interactionMode,
         prompt: {
           lemma: `Verb-${sequence}-${index}`,
           pos: 'verb',
@@ -58,6 +59,7 @@ export function buildPracticeTask<T extends TaskType>(
         taskType,
         pos: 'noun',
         renderer: entry.renderer,
+        interactionMode: entry.interactionMode,
         prompt: {
           lemma: `Nomen-${sequence}-${index}`,
           pos: 'noun',
@@ -83,6 +85,7 @@ export function buildPracticeTask<T extends TaskType>(
         taskType,
         pos: 'adjective',
         renderer: entry.renderer,
+        interactionMode: entry.interactionMode,
         prompt: {
           lemma: `Adjektiv-${sequence}-${index}`,
           pos: 'adjective',
@@ -107,6 +110,7 @@ export function buildPracticeTask<T extends TaskType>(
         taskType,
         pos: 'verb',
         renderer: entry.renderer,
+        interactionMode: entry.interactionMode,
         prompt: {
           scenario: `Szenario ${sequence}-${index}`,
           wordBankItems: ['würde', 'jedoch', 'meiner Meinung nach', 'sollte'],
@@ -133,6 +137,7 @@ export function buildPracticeTask<T extends TaskType>(
         taskType,
         pos: 'noun',
         renderer: entry.renderer,
+        interactionMode: entry.interactionMode,
         prompt: {
           lemma: `Wort-${sequence}-${index}`,
           pos: 'noun',

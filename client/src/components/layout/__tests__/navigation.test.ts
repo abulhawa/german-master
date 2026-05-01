@@ -3,8 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { getPrimaryNavigationItems, isNavigationItemActive } from '../navigation';
 
 describe('navigation helpers', () => {
-  it('adds Wortschatz without changing the existing primary navigation order', () => {
+  it('hides Writing by default in primary navigation', () => {
     expect(getPrimaryNavigationItems(null).map((item) => item.href)).toEqual([
+      '/',
+      '/wortschatz',
+      '/progress',
+    ]);
+  });
+
+  it('shows Writing when the Writing Lab feature is enabled', () => {
+    expect(getPrimaryNavigationItems(null, { writingLab: true }).map((item) => item.href)).toEqual([
       '/',
       '/writing',
       '/wortschatz',

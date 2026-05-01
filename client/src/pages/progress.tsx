@@ -16,6 +16,7 @@ import { getAnswerHistoryFilterLevels, type AnsweredQuestion } from "@/lib/answe
 import { loadPracticeProgress } from "@/lib/practice-progress";
 import { computePracticeSummary } from "@/lib/practice-overview";
 import { getProgressTaskTypeLabel } from "@/lib/task-metadata";
+import { useFeatureCapabilities } from "@/lib/features";
 import type { TaskType } from "@shared";
 
 import { FilterControls } from "./answer-history/components/filter-controls";
@@ -184,9 +185,10 @@ export function ProgressPage({ legacySource }: ProgressPageProps) {
   } = useAnswerHistory({ pageSize: 150 });
 
   const { data: authSession } = useAuthSession();
+  const features = useFeatureCapabilities();
   const navigationItems = useMemo(
-    () => getPrimaryNavigationItems(authSession?.user.role ?? null),
-    [authSession?.user.role],
+    () => getPrimaryNavigationItems(authSession?.user.role ?? null, features),
+    [authSession?.user.role, features],
   );
 
   const visibleHistory = useMemo(() => history.filter(isProgressHistoryEntry), [history]);

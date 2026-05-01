@@ -44,6 +44,7 @@ import {
   type WortschatzStorageState,
 } from '@/lib/wortschatz-storage';
 import { cn, speak } from '@/lib/utils';
+import { useFeatureCapabilities } from '@/lib/features';
 import type { PartOfSpeech, WortschatzWord } from '@shared';
 
 const B2_EXAM_DATE = new Date(2026, 3, 30);
@@ -187,7 +188,11 @@ export default function WortschatzPage() {
   const translations = useTranslations();
   const copy = translations.wortschatz;
   const isMobile = useIsMobile();
-  const navigationItems = getPrimaryNavigationItems(authSession.data?.user.role ?? null);
+  const features = useFeatureCapabilities();
+  const navigationItems = useMemo(
+    () => getPrimaryNavigationItems(authSession.data?.user.role ?? null, features),
+    [authSession.data?.user.role, features],
+  );
   const [storageState, setStorageState] = useState(() => loadWortschatzState());
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
   const cardPointerStartRef = useRef<{ x: number; y: number } | null>(null);

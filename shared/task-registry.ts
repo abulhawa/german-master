@@ -121,10 +121,13 @@ export type LexemePos =
   | 'particle'
   | 'interjection';
 
+export type TaskInteractionMode = 'choice' | 'typed' | 'self_grade' | 'writing';
+
 interface TaskRegistryEntryBase {
   readonly taskType: string;
   readonly supportedPos: ReadonlyArray<LexemePos>;
   readonly renderer: string;
+  readonly interactionMode: TaskInteractionMode;
   readonly promptSchema: z.ZodTypeAny;
   readonly solutionSchema: z.ZodTypeAny;
   readonly defaultQueueCap: number;
@@ -135,6 +138,7 @@ export const taskTypeRegistry = {
     taskType: 'conjugate_form',
     supportedPos: ['verb'],
     renderer: 'conjugate_form',
+    interactionMode: 'typed',
     promptSchema: conjugatePromptSchema,
     solutionSchema: conjugateSolutionSchema,
     defaultQueueCap: 30,
@@ -143,6 +147,7 @@ export const taskTypeRegistry = {
     taskType: 'noun_case_declension',
     supportedPos: ['noun'],
     renderer: 'noun_case_declension',
+    interactionMode: 'typed',
     promptSchema: nounDeclensionPromptSchema,
     solutionSchema: nounDeclensionSolutionSchema,
     defaultQueueCap: 25,
@@ -151,6 +156,7 @@ export const taskTypeRegistry = {
     taskType: 'adj_ending',
     supportedPos: ['adjective'],
     renderer: 'adj_ending',
+    interactionMode: 'typed',
     promptSchema: adjectiveEndingPromptSchema,
     solutionSchema: adjectiveEndingSolutionSchema,
     defaultQueueCap: 20,
@@ -159,6 +165,7 @@ export const taskTypeRegistry = {
     taskType: 'b2_writing_prompt',
     supportedPos: ['verb', 'adjective', 'noun'],
     renderer: 'b2_writing_prompt',
+    interactionMode: 'writing',
     promptSchema: b2WritingPromptSchema,
     solutionSchema: b2WritingSolutionSchema,
     defaultQueueCap: 3,
@@ -179,6 +186,7 @@ export const taskTypeRegistry = {
       'interjection',
     ],
     renderer: 'word_card',
+    interactionMode: 'self_grade',
     promptSchema: vocabularyDrillPromptSchema,
     solutionSchema: vocabularyDrillSolutionSchema,
     defaultQueueCap: 50,

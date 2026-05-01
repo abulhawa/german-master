@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { useFeatureCapabilities } from '@/lib/features';
 
 import type { Word } from '@shared';
 
@@ -65,6 +66,7 @@ export default function AdminEnrichmentPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: authSession } = useAuthSession();
+  const features = useFeatureCapabilities();
 
   useEffect(() => {
     localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, normalizedAdminToken);
@@ -75,8 +77,8 @@ export default function AdminEnrichmentPage() {
   }, [search, pos, level, perPage]);
 
   const navigationItems = useMemo(
-    () => getPrimaryNavigationItems(authSession?.user.role ?? null),
-    [authSession?.user.role],
+    () => getPrimaryNavigationItems(authSession?.user.role ?? null, features),
+    [authSession?.user.role, features],
   );
 
   const queueFilters = useMemo<AdminWordFiltersState>(

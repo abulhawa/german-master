@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useMemo, type ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'wouter';
@@ -8,6 +8,20 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
 
 import { MobileNavBar } from '../mobile-nav-bar';
 import type { AppNavigationItem } from '../navigation';
+import { LocaleProvider } from '@/locales';
+
+vi.mock('@/components/auth/auth-dialog', () => ({
+  AuthDialog: ({ open }: { open: boolean }) => (open ? <div role="dialog">Account dialog</div> : null),
+}));
+
+vi.mock('@/auth/session', () => ({
+  useAuthSession: () => ({
+    data: null,
+    status: 'success',
+    isLoading: false,
+    isFetching: false,
+  }),
+}));
 
 function MemoryRouter({ initialPath, children }: { initialPath: string; children: ReactNode }) {
   const location = useMemo(() => memoryLocation({ path: initialPath }), [initialPath]);
@@ -39,7 +53,7 @@ describe('MobileNavBar', () => {
   it('marks the active route using aria-current', () => {
     render(
       <MemoryRouter initialPath="/analytics">
-        <MobileNavBar items={items} />
+        <MobileNavBar items={items} showAccount={false} />
       </MemoryRouter>,
     );
 
@@ -55,7 +69,7 @@ describe('MobileNavBar', () => {
 
     render(
       <MemoryRouter initialPath="/">
-        <MobileNavBar items={items} />
+        <MobileNavBar items={items} showAccount={false} />
       </MemoryRouter>,
     );
 
@@ -83,11 +97,28 @@ describe('MobileNavBar', () => {
             { href: '/', label: 'Practice', icon: PracticeIcon, exact: true },
             { href: '/admin', label: 'Admin tools', icon: AdminIcon },
           ]}
+          showAccount={false}
         />
       </MemoryRouter>,
     );
 
     expect(screen.getByRole('link', { name: 'Admin tools' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Practice' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('exposes Account as a mobile nav action', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <LocaleProvider>
+        <MemoryRouter initialPath="/">
+          <MobileNavBar items={items} />
+        </MemoryRouter>
+      </LocaleProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+
+    expect(screen.getByRole('dialog')).toHaveTextContent('Account dialog');
   });
 });

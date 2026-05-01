@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSession } from '@/auth/session';
+import { useFeatureCapabilities } from '@/lib/features';
 import type { Word } from '@shared';
 
 import {
@@ -157,9 +158,10 @@ const AdminWordsPage = () => {
   };
 
   const { data: authSession } = useAuthSession();
+  const features = useFeatureCapabilities();
   const navigationItems = useMemo(
-    () => getPrimaryNavigationItems(authSession?.user.role ?? null),
-    [authSession?.user.role],
+    () => getPrimaryNavigationItems(authSession?.user.role ?? null, features),
+    [authSession?.user.role, features],
   );
 
   const sidebar = (

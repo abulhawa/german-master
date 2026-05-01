@@ -46,6 +46,7 @@ const practiceTask: PracticeTask = {
   taskType: 'conjugate_form',
   pos: 'verb',
   renderer: 'conjugate_form',
+  interactionMode: 'typed',
   prompt: {
     lemma: 'gehen',
     pos: 'verb',
@@ -65,6 +66,7 @@ const practiceTaskTwo: PracticeTask = {
   taskType: 'conjugate_form',
   pos: 'verb',
   renderer: 'conjugate_form',
+  interactionMode: 'typed',
   prompt: {
     lemma: 'kommen',
     pos: 'verb',

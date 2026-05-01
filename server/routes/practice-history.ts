@@ -171,7 +171,7 @@ function toUserPracticeHistoryItem(row: UserPracticeHistoryRow): TaskAnswerHisto
   const promptSummary = `${row.lemma} - ${row.taskType.replace(/[_-]+/g, " ")}`;
 
   return {
-    id: `user_practice_history:${row.id}`,
+    id: `practice_history_fallback:${row.id}`,
     taskId: row.taskId,
     lexemeId: row.lexemeId,
     taskType: row.taskType as TaskType,
@@ -197,6 +197,51 @@ function toUserPracticeHistoryItem(row: UserPracticeHistoryRow): TaskAnswerHisto
   } satisfies TaskAnswerHistoryItem;
 }
 
+async function fetchMobileHistoryFallback(
+  userId: string,
+  options: {
+    result?: PracticeResult;
+    level?: string;
+    limit: number;
+  },
+): Promise<TaskAnswerHistoryItem[]> {
+  const mobileFilters: SQL[] = [eq(userPracticeHistory.userId, userId)];
+
+  if (options.result) {
+    mobileFilters.push(eq(userPracticeHistory.result, options.result));
+  }
+
+  if (options.level) {
+    mobileFilters.push(eq(userPracticeHistory.cefrLevel, options.level));
+  }
+
+  const rows = await db
+    .select({
+      id: userPracticeHistory.id,
+      taskId: userPracticeHistory.taskId,
+      lexemeId: userPracticeHistory.lexemeId,
+      lemma: userPracticeHistory.lemma,
+      lexemeLemma: lexemes.lemma,
+      lexemeMetadata: lexemes.metadata,
+      pos: userPracticeHistory.pos,
+      taskType: userPracticeHistory.taskType,
+      renderer: userPracticeHistory.renderer,
+      result: userPracticeHistory.result,
+      submittedAnswer: userPracticeHistory.submittedAnswer,
+      correctAnswer: userPracticeHistory.correctAnswer,
+      responseMs: userPracticeHistory.responseMs,
+      submittedAt: userPracticeHistory.submittedAt,
+      cefrLevel: userPracticeHistory.cefrLevel,
+    })
+    .from(userPracticeHistory)
+    .innerJoin(lexemes, eq(userPracticeHistory.lexemeId, lexemes.id))
+    .where(and(...mobileFilters))
+    .orderBy(desc(userPracticeHistory.submittedAt), desc(userPracticeHistory.id))
+    .limit(options.limit);
+
+  return rows.map((row) => toUserPracticeHistoryItem(row as UserPracticeHistoryRow));
+}
+
 export function createPracticeHistoryRouter(): Router {
   const router = Router();
 
@@ -210,54 +255,15 @@ export function createPracticeHistoryRouter(): Router {
       });
     }
 
-      const { limit, result, level, deviceId } = parsed.data;
-      const sessionUserId = getSessionUserId(req.authSession);
+    const { limit, result, level, deviceId } = parsed.data;
+    const sessionUserId = getSessionUserId(req.authSession);
 
-      if (!sessionUserId && !deviceId) {
-        return sendError(res, 400, "Device identifier required", "DEVICE_ID_REQUIRED");
-      }
+    if (!sessionUserId && !deviceId) {
+      return sendError(res, 400, "Device identifier required", "DEVICE_ID_REQUIRED");
+    }
 
-      try {
-      if (sessionUserId) {
-        const mobileFilters: SQL[] = [eq(userPracticeHistory.userId, sessionUserId)];
-
-        if (result) {
-          mobileFilters.push(eq(userPracticeHistory.result, result));
-        }
-
-        if (level) {
-          mobileFilters.push(eq(userPracticeHistory.cefrLevel, level));
-        }
-
-        const rows = await db
-          .select({
-            id: userPracticeHistory.id,
-            taskId: userPracticeHistory.taskId,
-            lexemeId: userPracticeHistory.lexemeId,
-            lemma: userPracticeHistory.lemma,
-            lexemeLemma: lexemes.lemma,
-            lexemeMetadata: lexemes.metadata,
-            pos: userPracticeHistory.pos,
-            taskType: userPracticeHistory.taskType,
-            renderer: userPracticeHistory.renderer,
-            result: userPracticeHistory.result,
-            submittedAnswer: userPracticeHistory.submittedAnswer,
-            correctAnswer: userPracticeHistory.correctAnswer,
-            responseMs: userPracticeHistory.responseMs,
-            submittedAt: userPracticeHistory.submittedAt,
-            cefrLevel: userPracticeHistory.cefrLevel,
-          })
-          .from(userPracticeHistory)
-          .innerJoin(lexemes, eq(userPracticeHistory.lexemeId, lexemes.id))
-          .where(and(...mobileFilters))
-          .orderBy(desc(userPracticeHistory.submittedAt), desc(userPracticeHistory.id))
-          .limit(limit);
-
-        res.setHeader("Cache-Control", "no-store");
-        return res.json({ history: rows.map((row) => toUserPracticeHistoryItem(row as UserPracticeHistoryRow)) });
-      }
-
-      const attributeFilters: Array<ReturnType<typeof eq>> = [];
+    try {
+      const attributeFilters: SQL[] = [];
 
       if (result) {
         attributeFilters.push(eq(practiceHistory.result, result));
@@ -319,6 +325,16 @@ export function createPracticeHistoryRouter(): Router {
         .limit(limit);
 
       const history = rows.map((row) => toAnswerHistoryItem(row as PracticeHistoryRow));
+      if (history.length === 0 && sessionUserId) {
+        const fallbackHistory = await fetchMobileHistoryFallback(sessionUserId, {
+          result,
+          level,
+          limit,
+        });
+        res.setHeader("Cache-Control", "no-store");
+        return res.json({ history: fallbackHistory });
+      }
+
       res.setHeader("Cache-Control", "no-store");
       res.json({ history });
     } catch (error) {

@@ -325,6 +325,14 @@ export interface WortschatzMessages {
   };
 }
 
+export interface WritingMessages {
+  unavailable: {
+    title: string;
+    description: string;
+    backToPractice: string;
+  };
+}
+
 export interface AuthMessages {
   sidebar: {
     signedOutTitle: string;
@@ -406,6 +414,7 @@ export interface AppMessages {
   progressDisplay: ProgressDisplayMessages;
   home: HomeMessages;
   wortschatz: WortschatzMessages;
+  writing: WritingMessages;
   settingsDialog: SettingsDialogMessages;
   auth: AuthMessages;
 }
@@ -582,6 +591,14 @@ const MESSAGES: Record<Locale, AppMessages> = {
         loadTitle: 'Unable to load Wortschatz',
         loadDescription: 'Try again to reload the bundled vocabulary list.',
         retry: 'Retry',
+      },
+    },
+    writing: {
+      unavailable: {
+        title: 'Writing Lab unavailable',
+        description:
+          'Writing practice is experimental and requires AI feedback to be configured before it appears in the app.',
+        backToPractice: 'Back to practice',
       },
     },
     settingsDialog: {
@@ -1036,6 +1053,14 @@ const MESSAGES: Record<Locale, AppMessages> = {
         loadTitle: 'Wortschatz konnte nicht geladen werden',
         loadDescription: 'Versuche es erneut, um die gebündelte Wortliste nachzuladen.',
         retry: 'Erneut versuchen',
+      },
+    },
+    writing: {
+      unavailable: {
+        title: 'Writing Lab nicht verfügbar',
+        description:
+          'Schreibtraining ist experimentell und erfordert konfigurierte KI-Rückmeldung, bevor es in der App erscheint.',
+        backToPractice: 'Zurück zur Übung',
       },
     },
     settingsDialog: {

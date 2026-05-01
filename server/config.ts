@@ -43,3 +43,7 @@ export function isAdminFeatureEnabled(): boolean {
 
   return parseBooleanFlag(process.env.ENABLE_ADMIN_FEATURES, defaultValue);
 }
+
+export function isWritingLabFeatureEnabled(): boolean {
+  return parseBooleanFlag(process.env.ENABLE_WRITING_LAB, false) && Boolean(process.env.GROQ_API_KEY);
+}

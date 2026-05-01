@@ -241,6 +241,7 @@ export function createListTasksHandler(): RequestHandler {
         taskId: string;
         taskType: string;
         renderer: string;
+        interactionMode: string;
         pos: string;
         prompt: Record<string, unknown>;
         solution?: unknown;
@@ -294,6 +295,7 @@ export function createListTasksHandler(): RequestHandler {
           taskId,
           taskType: taskTypeValue,
           renderer: rendererValue ?? registryEntry.renderer,
+          interactionMode: registryEntry.interactionMode,
           pos: posValue,
           prompt,
           solution: row.solution,

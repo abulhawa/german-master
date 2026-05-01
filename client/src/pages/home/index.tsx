@@ -29,6 +29,7 @@ import { useTranslations } from '@/locales';
 import { usePracticeSettings } from '@/contexts/practice-settings-context';
 import { queryClient } from '@/lib/queryClient';
 import { fetchPracticeTasks } from '@/lib/tasks';
+import { useFeatureCapabilities } from '@/lib/features';
 import type { CEFRLevel, TaskType, LexemePos } from '@shared';
 import {
   PRACTICE_QUEUE_REFRESH_EVENT,
@@ -76,10 +77,11 @@ export default function Home() {
   const homeTopBarCopy = translations.home.topBar;
   const historyCardMessages = translations.home.historyCard;
   const queueDiagnosticsMessages = translations.home.queueDiagnostics;
+  const features = useFeatureCapabilities();
 
   const navigationItems = useMemo(
-    () => getPrimaryNavigationItems(authSession.data?.user.role ?? null),
-    [authSession.data?.user.role],
+    () => getPrimaryNavigationItems(authSession.data?.user.role ?? null, features),
+    [authSession.data?.user.role, features],
   );
 
   const scope = computeScope(settings);

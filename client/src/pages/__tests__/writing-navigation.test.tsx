@@ -9,11 +9,13 @@ import {
   renderWritingPage,
   setupHomeNavigationTest,
   mockFetchPracticeTasks,
+  setFeatureCapabilities,
 } from './home-navigation/utils';
 
 describe('Writing page', () => {
   beforeEach(() => {
     setupHomeNavigationTest();
+    setFeatureCapabilities({ writingLab: true });
   });
 
   it('loads writing tasks from a dedicated route and defaults to any level', async () => {

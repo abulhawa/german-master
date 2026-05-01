@@ -289,6 +289,7 @@ describe('tasks API', () => {
     const taskTypes = new Set(body.tasks.map((task: any) => task.taskType));
     expect(taskTypes.has('conjugate_form')).toBe(true);
     expect(taskTypes.has('noun_case_declension')).toBe(true);
+    expect(body.tasks.every((task: any) => task.interactionMode === 'typed')).toBe(true);
   });
 
   it('enforces a multi-level allowlist across multiple task types', async () => {
@@ -562,6 +563,64 @@ describe('tasks API', () => {
       expectedResponse: 'ging',
       promptSummary: 'gehen - past tense',
     });
+  });
+
+  it('reads signed-in answer history from canonical practice_history before mobile-compatible history', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'canonical-history-user-1';
+    const deviceId = 'canonical-history-device-1';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-canonical-history', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    const taskResponse = await invokeApi('/api/tasks?taskTypes=conjugate_form&pos=verb&limit=1');
+    expect(taskResponse.status).toBe(200);
+    const task = (taskResponse.bodyJson as any).tasks[0];
+    expect(task).toBeDefined();
+
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: task.taskId,
+        lexemeId: task.lexeme.id,
+        taskType: task.taskType,
+        pos: task.pos,
+        renderer: task.renderer,
+        deviceId,
+        result: 'incorrect',
+        submittedResponse: 'canonical answer',
+        expectedResponse: 'expected answer',
+        promptSummary: 'canonical prompt',
+        timeSpentMs: 1200,
+        cefrLevel: 'A1',
+      },
+    });
+
+    expect(submission.status).toBe(200);
+
+    await dbContext.pool.query(
+      [
+        'update user_practice_history',
+        'set submitted_answer = $1, correct_answer = $2',
+        'where user_id = $3 and task_id = $4',
+      ].join(' '),
+      ['stale mobile answer', 'stale mobile expected', userId, task.taskId],
+    );
+
+    const historyResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=10`);
+    expect(historyResponse.status).toBe(200);
+    const history = ((historyResponse.bodyJson as any).history ?? []) as any[];
+
+    expect(history).toHaveLength(1);
+    expect(history[0].id).toMatch(/^practice_history:/);
+    expect(history[0].id).not.toMatch(/^user_practice_history:/);
+    expect(history[0].submittedResponse).toBe('canonical answer');
+    expect(history[0].expectedResponse).toBe('expected answer');
+    expect(history[0].promptSummary).toBe('canonical prompt');
   });
 
   it('stores canonical vocabulary ids for direct web vocabulary submissions', async () => {

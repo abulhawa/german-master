@@ -104,6 +104,14 @@ vi.mock('@/lib/api', () => ({
   submitPracticeAttempt: vi.fn().mockResolvedValue({ queued: false }),
 }));
 
+let featureCapabilities = { writingLab: false };
+
+vi.mock('@/lib/features', () => ({
+  DEFAULT_FEATURE_CAPABILITIES: { writingLab: false },
+  fetchFeatureCapabilities: vi.fn(async () => featureCapabilities),
+  useFeatureCapabilities: () => featureCapabilities,
+}));
+
 const { fetchPracticeTasksByType, clientTaskRegistry } = await import('@/lib/tasks');
 
 export type FetchPracticeTasksMock = Mock<
@@ -115,6 +123,10 @@ export const mockFetchPracticeTasks =
 
 export const SETTINGS_STORAGE_KEY = 'practice.settings';
 export const MIGRATION_MARKER_KEY = 'practice.settings.migrated';
+
+export function setFeatureCapabilities(nextFeatures: { writingLab: boolean }) {
+  featureCapabilities = nextFeatures;
+}
 
 function stubMatchMedia() {
   Object.defineProperty(window, 'matchMedia', {
@@ -185,6 +197,7 @@ export { resetPracticeTaskFactoryState };
 function prepareMocks() {
   vi.clearAllMocks();
   resetPracticeTaskFactoryState();
+  setFeatureCapabilities({ writingLab: false });
   mockFetchPracticeTasks.mockReset();
   mockFetchPracticeTasks.mockResolvedValue({});
   localStorage.clear();
@@ -268,6 +281,7 @@ export function createConjugationTask(
     taskType: 'conjugate_form',
     pos: 'verb',
     renderer: entry.renderer,
+    interactionMode: entry.interactionMode,
     prompt: {
       lemma,
       pos: 'verb',

@@ -81,6 +81,7 @@ describe('fetchPracticeTasks', () => {
     expect(task.taskId).toBe('task-1');
     expect(task.prompt.lemma).toBe('sein');
     expect(task.expectedSolution?.form).toBe('bin');
+    expect(task.interactionMode).toBe('typed');
     expect(task.source).toBe('seed');
   });
 
@@ -246,6 +247,14 @@ describe('client task registry parity', () => {
 
   it('returns shared registry references for known task types', () => {
     expect(getClientTaskRegistryEntry('conjugate_form')).toBe(taskTypeRegistry.conjugate_form);
+  });
+
+  it('exposes the adaptive interaction mode contract for every task type', () => {
+    expect(clientTaskRegistry.conjugate_form.interactionMode).toBe('typed');
+    expect(clientTaskRegistry.noun_case_declension.interactionMode).toBe('typed');
+    expect(clientTaskRegistry.adj_ending.interactionMode).toBe('typed');
+    expect(clientTaskRegistry.vocabulary_drill.interactionMode).toBe('self_grade');
+    expect(clientTaskRegistry.b2_writing_prompt.interactionMode).toBe('writing');
   });
 
   it('throws when requesting an unknown task type', () => {

@@ -17,6 +17,7 @@ import { buildPracticeSessionScopeKey } from '@/lib/practice-overview';
 import { usePracticeSettings } from '@/contexts/practice-settings-context';
 import { queryClient } from '@/lib/queryClient';
 import { fetchPracticeTasks } from '@/lib/tasks';
+import { useFeatureCapabilities } from '@/lib/features';
 import type { CEFRLevel, LexemePos, TaskType } from '@shared';
 import {
   PRACTICE_QUEUE_REFRESH_EVENT,
@@ -77,14 +78,20 @@ export default function WritingPage() {
   const translations = useTranslations();
   const historyCardMessages = translations.home.historyCard;
   const queueDiagnosticsMessages = translations.home.queueDiagnostics;
+  const unavailableMessages = translations.writing.unavailable;
   const writingLevelLabelId = useId();
+  const features = useFeatureCapabilities();
+  const isWritingLabEnabled = features.writingLab;
 
   const navigationItems = useMemo(
-    () => getPrimaryNavigationItems(authSession.data?.user.role ?? null),
-    [authSession.data?.user.role],
+    () => getPrimaryNavigationItems(authSession.data?.user.role ?? null, features),
+    [authSession.data?.user.role, features],
   );
 
-  const activeTaskTypes = WRITING_TASK_TYPES;
+  const activeTaskTypes = useMemo(
+    () => (isWritingLabEnabled ? [...WRITING_TASK_TYPES] : []),
+    [isWritingLabEnabled],
+  );
   const levelOverride = useMemo(
     () => WRITING_LEVEL_QUERY[writingLevel],
     [writingLevel],
@@ -129,6 +136,10 @@ export default function WritingPage() {
   });
 
   useEffect(() => {
+    if (!isWritingLabEnabled) {
+      return;
+    }
+
     void queryClient.fetchQuery({
       queryKey: ['tasks', 'writing', activeTaskTypes, writingLevel],
       queryFn: async () => {
@@ -144,7 +155,7 @@ export default function WritingPage() {
       },
       staleTime: 30_000,
     }).catch(() => undefined);
-  }, [activeTaskTypes, levelOverride, writingLevel]);
+  }, [activeTaskTypes, isWritingLabEnabled, levelOverride, writingLevel]);
 
   const sessionCompleted = session.completed.length;
   const milestoneTarget = useMemo(() => {
@@ -268,11 +279,32 @@ export default function WritingPage() {
     <div id={WRITING_SECTION_IDS.page}>
       <AppShell
         sidebar={sidebar}
-        topBarContent={topBarControls}
+        topBarContent={isWritingLabEnabled ? topBarControls : undefined}
         mobileNav={<MobileNavBar items={navigationItems} />}
         debugId="writing-app-shell"
       >
         <div className="space-y-6" id={WRITING_SECTION_IDS.content}>
+          {!isWritingLabEnabled ? (
+            <section className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-soft shadow-primary/5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                  <PenLine className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-semibold text-foreground">{unavailableMessages.title}</h1>
+                  <p className="max-w-2xl text-sm text-muted-foreground">
+                    {unavailableMessages.description}
+                  </p>
+                  <Link href="/">
+                    <Button variant="secondary" className="rounded-2xl">
+                      {unavailableMessages.backToPractice}
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </section>
+          ) : null}
+          {isWritingLabEnabled ? (
           <section className="space-y-6" id={WRITING_SECTION_IDS.practiceSection}>
             <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <div className="flex flex-1 flex-col gap-6">
@@ -399,6 +431,7 @@ export default function WritingPage() {
               </Link>
             </div>
           </section>
+          ) : null}
         </div>
       </AppShell>
     </div>
