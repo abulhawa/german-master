@@ -116,10 +116,7 @@ export async function inspectCanonicalVocabularyReadiness(): Promise<CanonicalVo
         (
           select count(*)
           from lexemes
-          where (
-              upper(metadata ->> 'level') = 'B2'
-              or metadata ->> 'level' = 'B2 Beruf'
-            )
+          where upper(coalesce(metadata ->> 'cefrLevel', metadata ->> 'level')) = 'B2'
             and coalesce(metadata -> 'collections', '[]'::jsonb) @> $1::jsonb
         ) as b2_beruf_lexeme_count,
         (select count(*) from word_resolution where lexeme_id is not null) as words_resolvable_to_lexemes,
@@ -141,23 +138,26 @@ export async function inspectCanonicalVocabularyReadiness(): Promise<CanonicalVo
               coalesce(l.metadata -> 'collections', '[]'::jsonb) @> $1::jsonb
               or coalesce(ts.prompt -> 'collections', '[]'::jsonb) @> $1::jsonb
               or coalesce(ts.metadata -> 'collections', '[]'::jsonb) @> $1::jsonb
-              or l.metadata ->> 'level' = 'B2 Beruf'
             )
           limit 1
         ) as b2_beruf_vocabulary_task_queryable,
         (
-          select count(distinct l.id)
-          from lexemes l
-          left join task_specs ts_canonical
-            on ts_canonical.lexeme_id = l.id
-           and ts_canonical.task_type = 'vocabulary_drill'
-           and (
-             coalesce(ts_canonical.prompt -> 'collections', '[]'::jsonb) @> $1::jsonb
-             or coalesce(ts_canonical.metadata -> 'collections', '[]'::jsonb) @> $1::jsonb
-           )
-          where (l.metadata ->> 'level' = 'B2 Beruf' or l.metadata ->> 'cefrLevel' = 'B2 Beruf')
-            and not coalesce(l.metadata -> 'collections', '[]'::jsonb) @> $1::jsonb
-            and ts_canonical.id is null
+          select count(distinct legacy.lexeme_id)
+          from (
+            select l.id as lexeme_id
+            from lexemes l
+            where l.metadata ->> 'level' = 'B2 Beruf'
+               or l.metadata ->> 'cefrLevel' = 'B2 Beruf'
+            union
+            select ts.lexeme_id
+            from task_specs ts
+            where ts.task_type = 'vocabulary_drill'
+              and (
+                ts.prompt ->> 'cefrLevel' = 'B2 Beruf'
+                or ts.metadata ->> 'level' = 'B2 Beruf'
+                or ts.metadata ->> 'cefrLevel' = 'B2 Beruf'
+              )
+          ) legacy
         ) as b2_beruf_level_misclassified_count
     `,
     [JSON.stringify([B2_BERUF_COLLECTION])],

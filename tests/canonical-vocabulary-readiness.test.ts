@@ -140,7 +140,7 @@ describe('canonical vocabulary readiness verification', () => {
     expect(report.issues).toEqual([]);
   });
 
-  it('accepts migration state when legacy B2 Beruf lexeme metadata has canonical task collection support', async () => {
+  it('does not treat runtime legacy B2 Beruf fallback as canonical readiness', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -153,8 +153,8 @@ describe('canonical vocabulary readiness verification', () => {
     const report = await inspectCanonicalVocabularyReadiness();
 
     expect(report.b2BerufVocabularyTaskQueryable).toBe(true);
-    expect(report.b2BerufLevelMisclassifiedCount).toBe(0);
-    expect(report.issues).not.toContain('B2_BERUF_LEVEL_NOT_CANONICAL');
+    expect(report.b2BerufLevelMisclassifiedCount).toBe(1);
+    expect(report.issues).toContain('B2_BERUF_LEVEL_NOT_CANONICAL');
     expect(report.issues).not.toContain('B2_BERUF_NOT_QUERYABLE');
   });
 
@@ -179,9 +179,10 @@ describe('canonical vocabulary readiness verification', () => {
 
     const report = await inspectCanonicalVocabularyReadiness();
 
-    expect(report.b2BerufVocabularyTaskQueryable).toBe(true);
+    expect(report.b2BerufVocabularyTaskQueryable).toBe(false);
     expect(report.b2BerufLevelMisclassifiedCount).toBe(1);
     expect(report.issues).toContain('B2_BERUF_LEVEL_NOT_CANONICAL');
+    expect(report.issues).toContain('B2_BERUF_NOT_QUERYABLE');
   });
 
   it('reports missing vocabulary_drill task specs', async () => {

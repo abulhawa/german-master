@@ -212,6 +212,56 @@ describe('buildLexemeInventory', () => {
       collections: [B2_BERUF_COLLECTION],
     });
   });
+
+  it('keeps canonical lexemes distinct when display lemmas share a stripped slug', () => {
+    const standardNoun = createNoun();
+    standardNoun.lemma = 'Bewohnerin';
+    standardNoun.level = 'B1';
+
+    const berufNoun = createNoun();
+    berufNoun.lemma = 'Bewohner/in';
+    berufNoun.level = 'B2 Beruf';
+    berufNoun.sourcesCsv = ANDROID_B2_BERUF_SOURCE;
+
+    const standardVerb = createVerb();
+    standardVerb.lemma = 'drucken';
+
+    const umlautVerb = createVerb();
+    umlautVerb.lemma = 'drücken';
+
+    const lexemeInventory = buildLexemeInventory([
+      standardNoun,
+      berufNoun,
+      standardVerb,
+      umlautVerb,
+    ]);
+    const taskInventory = buildTaskInventory([
+      standardNoun,
+      berufNoun,
+      standardVerb,
+      umlautVerb,
+    ]);
+
+    const lexemeLemmas = lexemeInventory.lexemes.map((lexeme) => lexeme.lemma);
+    expect(lexemeLemmas).toEqual(
+      expect.arrayContaining(['Bewohnerin', 'Bewohner/in', 'drucken', 'drücken']),
+    );
+    expect(new Set(lexemeInventory.lexemes.map((lexeme) => lexeme.id)).size).toBe(4);
+
+    const berufLexeme = lexemeInventory.lexemes.find((lexeme) => lexeme.lemma === 'Bewohner/in');
+    expect(berufLexeme?.metadata).toMatchObject({
+      level: 'B2',
+      collections: [B2_BERUF_COLLECTION],
+    });
+
+    const berufVocabularyTask = taskInventory.tasks.find(
+      (task) => task.taskType === 'vocabulary_drill' && task.lexemeId === berufLexeme?.id,
+    );
+    expect(berufVocabularyTask?.prompt).toMatchObject({
+      cefrLevel: 'B2',
+      collections: [B2_BERUF_COLLECTION],
+    });
+  });
 });
 
 describe('validateWord', () => {

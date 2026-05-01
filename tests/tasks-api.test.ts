@@ -347,6 +347,11 @@ describe('tasks API', () => {
     );
     expect(allB2Lemmas).toContain('Arbeitsvertrag');
     expect(allB2Lemmas).toContain('Projekt');
+
+    const legacyLevelResponse = await invokeApi(
+      `/api/tasks?taskTypes=vocabulary_drill&level=${encodeURIComponent('B2 Beruf')}&collection=${B2_BERUF_COLLECTION}&limit=10`,
+    );
+    expect(legacyLevelResponse.status).toBe(400);
   });
 
   it('maps legacy B2 Beruf lexeme metadata to the B2 Beruf collection filter during migration', async () => {

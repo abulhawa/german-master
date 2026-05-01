@@ -23,12 +23,12 @@ import {
 
 export function buildTaskInventory(words: AggregatedWord[]): TaskInventory {
   const tasks: TaskSpecSeed[] = [];
+  const lexemeIds = createLexemeIdResolver(words);
 
   for (const word of words) {
     validateGoldenWord(word);
 
-    const lexeme = createLexemeSeed(word);
-    const taskSource = createTaskSourceFromWord(word, lexeme.id);
+    const taskSource = createTaskSourceFromWord(word, lexemeIds(word));
     const generatedTasks = generateTaskSpecs(taskSource);
     for (const task of generatedTasks) {
       tasks.push({
@@ -58,10 +58,11 @@ export function buildTaskInventory(words: AggregatedWord[]): TaskInventory {
 export function buildLexemeInventory(words: AggregatedWord[]): LexemeInventory {
   const lexemeMap = new Map<string, LexemeSeed>();
   const allInflections: InflectionSeed[] = [];
+  const lexemeIds = createLexemeIdResolver(words);
 
   for (const word of words) {
     validateGoldenWord(word);
-    const lexeme = createLexemeSeed(word);
+    const lexeme = createLexemeSeed(word, lexemeIds(word));
     if (!lexemeMap.has(lexeme.id)) {
       lexemeMap.set(lexeme.id, lexeme);
     }
@@ -88,13 +89,8 @@ export function buildLexemeInventory(words: AggregatedWord[]): LexemeInventory {
   };
 }
 
-function createLexemeSeed(word: AggregatedWord): LexemeSeed {
+function createLexemeSeed(word: AggregatedWord, lexemeId: string): LexemeSeed {
   const pos = mapPos(word.pos);
-  const lemmaSlug = normaliseLemma(word.lemma);
-  const primarySource = primarySourceId(word);
-  const idHash = sha1(`${pos}:${lemmaSlug}:${primarySource}`);
-  const lexemeId = `de:${pos}:${lemmaSlug}:${idHash.slice(0, 8)}`;
-
   const collections = getCollections(word);
   const level = canonicalLevel(word);
   const metadata: Record<string, unknown> = {
@@ -148,6 +144,57 @@ function createLexemeSeed(word: AggregatedWord): LexemeSeed {
     metadata: cleanedMetadata,
     frequencyRank: null,
     sourceIds: collectSources(word),
+  };
+}
+
+function createLexemeIdResolver(words: AggregatedWord[]): (word: AggregatedWord) => string {
+  const entries = words.map((word) => {
+    const base = createLexemeIdParts(word);
+    const exactKey = `${base.pos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
+    return { word, baseKey: base.hashInput, exactKey };
+  });
+  const exactKeysByBase = new Map<string, Set<string>>();
+  for (const entry of entries) {
+    const exactKeys = exactKeysByBase.get(entry.baseKey) ?? new Set<string>();
+    exactKeys.add(entry.exactKey);
+    exactKeysByBase.set(entry.baseKey, exactKeys);
+  }
+
+  const disambiguators = new Map<string, string>();
+  for (const [baseKey, exactKeys] of exactKeysByBase) {
+    if (exactKeys.size <= 1) {
+      continue;
+    }
+    const ordered = Array.from(exactKeys).sort((left, right) => left.localeCompare(right, 'de'));
+    for (const exactKey of ordered.slice(1)) {
+      disambiguators.set(`${baseKey}\0${exactKey}`, exactKey);
+    }
+  }
+
+  return (word) => {
+    const base = createLexemeIdParts(word);
+    const exactKey = `${base.pos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
+    const disambiguator = disambiguators.get(`${base.hashInput}\0${exactKey}`);
+    const hashInput = disambiguator ? `${base.hashInput}:${disambiguator}` : base.hashInput;
+    const idHash = sha1(hashInput);
+    return `de:${base.pos}:${base.lemmaSlug}:${idHash.slice(0, 8)}`;
+  };
+}
+
+function createLexemeIdParts(word: AggregatedWord): {
+  pos: LexemePos;
+  lemmaSlug: string;
+  primarySource: string;
+  hashInput: string;
+} {
+  const pos = mapPos(word.pos);
+  const lemmaSlug = normaliseLemma(word.lemma);
+  const primarySource = primarySourceId(word);
+  return {
+    pos,
+    lemmaSlug,
+    primarySource,
+    hashInput: `${pos}:${lemmaSlug}:${primarySource}`,
   };
 }
 
