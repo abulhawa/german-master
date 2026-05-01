@@ -132,6 +132,7 @@ export interface AnswerHistoryLexemeSnapshot {
   lemma: string;
   pos: LexemePos;
   level?: CEFRLevel;
+  collections?: string[];
   english?: string;
   example?: AnswerHistoryLexemeExample;
   auxiliary?: 'haben' | 'sein' | 'haben / sein' | null;
@@ -168,6 +169,7 @@ export interface TaskAnswerHistoryItem {
   correctAnswer?: string;
   prompt?: string;
   level?: CEFRLevel;
+  collections?: string[];
   lexeme?: AnswerHistoryLexemeSnapshot;
   verb?: GermanVerb;
   legacyVerb?: {

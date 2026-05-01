@@ -1,6 +1,7 @@
 import { resolveLocalStorage } from '@/lib/storage';
 import { clientTaskRegistry } from '@/lib/tasks';
 import type { PracticeTask } from '@/lib/tasks';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 import type {
   AnswerHistoryLexemeSnapshot,
   CEFRLevel,
@@ -56,6 +57,41 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object');
 }
 
+function toStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)),
+  );
+}
+
+function hasB2BerufCollection(entry: TaskAnswerHistoryItem): boolean {
+  return Boolean(
+    entry.collections?.includes(B2_BERUF_COLLECTION) ||
+      entry.lexeme?.collections?.includes(B2_BERUF_COLLECTION),
+  );
+}
+
+export function getAnswerHistoryFilterLevels(entry: TaskAnswerHistoryItem): string[] {
+  if (hasB2BerufCollection(entry)) {
+    return ['B2 Beruf'];
+  }
+
+  const levels: string[] = [];
+  for (const level of [entry.level, entry.cefrLevel, entry.lexeme?.level] as unknown[]) {
+    if (typeof level === 'string' && level.trim().length > 0) {
+      levels.push(level);
+    }
+  }
+  return Array.from(new Set(levels));
+}
+
+export function getAnswerHistoryDisplayLevel(entry: TaskAnswerHistoryItem): string {
+  return getAnswerHistoryFilterLevels(entry)[0] ?? 'A1';
+}
+
 function toLexemeSnapshotFromVerb(
   verb: GermanVerb,
   level?: CEFRLevel,
@@ -77,6 +113,7 @@ function extractLexemeSnapshotFromTask(task: PracticeTask): AnswerHistoryLexemeS
   const metadata = task.lexeme.metadata;
   let level: CEFRLevel | undefined;
   let english: string | undefined;
+  let collections: string[] = [];
   let exampleDe: string | null | undefined;
   let exampleEn: string | null | undefined;
   let auxiliary: 'haben' | 'sein' | 'haben / sein' | null | undefined;
@@ -91,6 +128,7 @@ function extractLexemeSnapshotFromTask(task: PracticeTask): AnswerHistoryLexemeS
     if (typeof metadata.english === 'string') {
       english = metadata.english;
     }
+    collections = toStringList(metadata.collections);
     if (isRecord(metadata.example)) {
       if (typeof metadata.example.de === 'string') {
         exampleDe = metadata.example.de;
@@ -113,6 +151,7 @@ function extractLexemeSnapshotFromTask(task: PracticeTask): AnswerHistoryLexemeS
     lemma: task.lexeme.lemma,
     pos: task.pos,
     level,
+    collections: collections.length ? collections : undefined,
     english,
     example:
       typeof exampleDe === 'string' || typeof exampleEn === 'string'
@@ -292,6 +331,7 @@ export function createAnswerHistoryEntry(options: CreateHistoryEntryOptions): Ta
     correctAnswer: typeof expected === 'string' ? expected : undefined,
     prompt: options.promptSummary,
     level: options.task.lexeme.metadata?.level as CEFRLevel | undefined,
+    collections: lexeme?.collections,
     lexeme,
     verb: undefined,
     legacyVerb: undefined,

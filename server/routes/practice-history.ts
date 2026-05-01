@@ -53,6 +53,8 @@ type UserPracticeHistoryRow = {
   taskId: string;
   lexemeId: string;
   lemma: string;
+  lexemeLemma: string | null;
+  lexemeMetadata: Record<string, unknown> | null;
   pos: string;
   taskType: string;
   renderer: string;
@@ -64,6 +66,21 @@ type UserPracticeHistoryRow = {
   cefrLevel: string | null;
 };
 
+function toStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
 function buildLexemeSnapshotFromRow(
   row: Pick<PracticeHistoryRow, "lexemeId" | "lexemeLemma" | "pos" | "lexemeMetadata" | "cefrLevel">,
 ): AnswerHistoryLexemeSnapshot {
@@ -71,6 +88,7 @@ function buildLexemeSnapshotFromRow(
   const exampleMeta = isRecord(metadata.example) ? metadata.example : null;
   const level = normaliseCefrLevel(row.cefrLevel ?? metadata.level);
   const english = normaliseString(metadata.english);
+  const collections = toStringList(metadata.collections);
   const normalizedExample = exampleMeta
     ? normalizeWordExample({
         sentence: typeof exampleMeta.sentence === "string" ? exampleMeta.sentence : undefined,
@@ -93,6 +111,7 @@ function buildLexemeSnapshotFromRow(
     lemma: row.lexemeLemma ?? row.lexemeId,
     pos: row.pos as LexemePos,
     level,
+    collections: collections.length ? collections : undefined,
     english: english ?? undefined,
     example:
       normalizedExample && (normalizedExample.sentence || normalizedExample.translations?.en)
@@ -139,6 +158,7 @@ function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
     correctAnswer,
     prompt: promptSummary,
     level: cefrLevel,
+    collections: lexemeSnapshot.collections,
     lexeme: lexemeSnapshot,
     verb: undefined,
     legacyVerb: undefined,
@@ -146,7 +166,8 @@ function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
 }
 
 function toUserPracticeHistoryItem(row: UserPracticeHistoryRow): TaskAnswerHistoryItem {
-  const cefrLevel = normaliseCefrLevel(row.cefrLevel);
+  const lexemeSnapshot = buildLexemeSnapshotFromRow(row);
+  const cefrLevel = normaliseCefrLevel(row.cefrLevel ?? lexemeSnapshot.level);
   const promptSummary = `${row.lemma} - ${row.taskType.replace(/[_-]+/g, " ")}`;
 
   return {
@@ -169,12 +190,8 @@ function toUserPracticeHistoryItem(row: UserPracticeHistoryRow): TaskAnswerHisto
     correctAnswer: row.correctAnswer,
     prompt: promptSummary,
     level: cefrLevel,
-    lexeme: {
-      id: row.lexemeId,
-      lemma: row.lemma,
-      pos: row.pos as LexemePos,
-      level: cefrLevel,
-    },
+    collections: lexemeSnapshot.collections,
+    lexeme: lexemeSnapshot,
     verb: undefined,
     legacyVerb: undefined,
   } satisfies TaskAnswerHistoryItem;
@@ -218,6 +235,8 @@ export function createPracticeHistoryRouter(): Router {
             taskId: userPracticeHistory.taskId,
             lexemeId: userPracticeHistory.lexemeId,
             lemma: userPracticeHistory.lemma,
+            lexemeLemma: lexemes.lemma,
+            lexemeMetadata: lexemes.metadata,
             pos: userPracticeHistory.pos,
             taskType: userPracticeHistory.taskType,
             renderer: userPracticeHistory.renderer,
@@ -229,6 +248,7 @@ export function createPracticeHistoryRouter(): Router {
             cefrLevel: userPracticeHistory.cefrLevel,
           })
           .from(userPracticeHistory)
+          .innerJoin(lexemes, eq(userPracticeHistory.lexemeId, lexemes.id))
           .where(and(...mobileFilters))
           .orderBy(desc(userPracticeHistory.submittedAt), desc(userPracticeHistory.id))
           .limit(limit);

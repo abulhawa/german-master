@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AnsweredQuestion } from "@/lib/answer-history";
+import { B2_BERUF_COLLECTION } from "@shared/content-sources";
 
 import { LEVEL_FILTERS, answerMatchesLevelFilter } from "./utils";
 
@@ -42,5 +43,20 @@ describe("answer history level filters", () => {
     expect(answerMatchesLevelFilter(berufEntry, "B2 Beruf")).toBe(true);
     expect(answerMatchesLevelFilter(berufEntry, "B2")).toBe(false);
     expect(answerMatchesLevelFilter(b2Entry, "B2 Beruf")).toBe(false);
+  });
+
+  it("matches canonical B2 vocabulary entries with the B2 Beruf collection", () => {
+    const berufEntry = createHistoryEntry("B2");
+    berufEntry.taskType = "vocabulary_drill";
+    berufEntry.collections = [B2_BERUF_COLLECTION];
+    berufEntry.lexeme = {
+      ...berufEntry.lexeme!,
+      level: "B2",
+      collections: [B2_BERUF_COLLECTION],
+    };
+
+    expect(answerMatchesLevelFilter(berufEntry, "B2 Beruf")).toBe(true);
+    expect(answerMatchesLevelFilter(berufEntry, "B2")).toBe(false);
+    expect(answerMatchesLevelFilter(berufEntry, "A1")).toBe(false);
   });
 });

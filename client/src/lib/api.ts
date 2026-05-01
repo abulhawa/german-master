@@ -28,6 +28,7 @@ const answerHistoryLexemeSchema = z.object({
   lemma: z.string(),
   pos: z.string(),
   level: z.string().optional(),
+  collections: z.array(z.string()).optional(),
   english: z.string().optional(),
   example: z
     .object({
@@ -58,6 +59,7 @@ const practiceHistoryItemSchema = z.object({
   correctAnswer: z.string().optional(),
   prompt: z.string().optional(),
   level: z.string().optional(),
+  collections: z.array(z.string()).optional(),
   lexeme: answerHistoryLexemeSchema.optional(),
   verb: z.unknown().optional(),
   legacyVerb: z.unknown().optional(),

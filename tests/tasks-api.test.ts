@@ -673,6 +673,56 @@ describe('tasks API', () => {
     expect(leakedLegacyIds.rows[0]!.count).toBe(0);
   });
 
+  it('returns B2 Beruf collection metadata for synced canonical vocabulary history', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'wortschatz-history-user-metadata';
+    const deviceId = 'wortschatz-history-device-metadata';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-wortschatz-history-metadata', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    const legacyTaskId = await insertLegacyWordForLemma('Arbeitsvertrag');
+    const submission = await invokeApi('/api/submission', {
+      method: 'POST',
+      body: {
+        taskId: legacyTaskId,
+        lexemeId: legacyTaskId,
+        taskType: 'vocabulary_drill',
+        pos: 'N',
+        renderer: 'word_card',
+        deviceId,
+        result: 'correct',
+        submittedResponse: 'Arbeitsvertrag',
+        expectedResponse: 'employment contract',
+        promptSummary: 'Arbeitsvertrag - vocabulary drill',
+        timeSpentMs: 900,
+      },
+    });
+
+    expect(submission.status).toBe(200);
+
+    await dbContext.pool.query(
+      'update user_practice_history set cefr_level = null where user_id = $1 and device_id = $2',
+      [userId, deviceId],
+    );
+
+    const historyResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=10`);
+    expect(historyResponse.status).toBe(200);
+    const history = ((historyResponse.bodyJson as any).history ?? []) as any[];
+
+    expect(history).toHaveLength(1);
+    expect(history[0].taskType).toBe('vocabulary_drill');
+    expect(history[0].level).toBe('B2');
+    expect(history[0].cefrLevel).toBe('B2');
+    expect(history[0].collections).toContain(B2_BERUF_COLLECTION);
+    expect(history[0].lexeme?.level).toBe('B2');
+    expect(history[0].lexeme?.collections).toContain(B2_BERUF_COLLECTION);
+  });
+
   it('resolves legacy Wortschatz lexeme ids to canonical device history', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');

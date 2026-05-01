@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PracticeMode } from "@/lib/types";
 import { getTaskTypeLabel } from "@/lib/task-metadata";
-import type { AnsweredQuestion } from "@/lib/answer-history";
+import { getAnswerHistoryDisplayLevel, type AnsweredQuestion } from "@/lib/answer-history";
 import type { AnswerHistoryLexemeSnapshot } from "@shared";
 import { derivePromptLemmaFromEntry } from "@/lib/prompt-lemma";
 import {
@@ -119,7 +119,7 @@ export function AnsweredQuestionsPanel({
                   } satisfies AnswerHistoryLexemeSnapshot)
                 : undefined);
             const mode = item.mode ?? item.legacyVerb?.mode;
-            const level = item.level ?? item.cefrLevel ?? "A1";
+            const level = getAnswerHistoryDisplayLevel(item);
             const prompt = item.prompt ?? item.promptSummary;
             const attempted = item.attemptedAnswer ?? (typeof item.submittedResponse === "string" ? item.submittedResponse : "");
             const promptLemma = derivePromptLemmaFromEntry(item);
