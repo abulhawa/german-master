@@ -37,17 +37,33 @@ function createDelimitedSourceFilter(source: string) {
 }
 
 function mapHistoryPosToWordPosSql(column: typeof userPracticeHistory.pos | typeof lexemes.pos) {
-  return sql`case ${column}
+  return sql`case lower(${column})
+    when 'v' then 'V'
     when 'verb' then 'V'
+    when 'n' then 'N'
     when 'noun' then 'N'
+    when 'adj' then 'Adj'
     when 'adjective' then 'Adj'
+    when 'adv' then 'Adv'
     when 'adverb' then 'Adv'
+    when 'pron' then 'Pron'
     when 'pronoun' then 'Pron'
+    when 'det' then 'Det'
     when 'determiner' then 'Det'
+    when 'art' then 'Det'
+    when 'prep' then 'PrÃ¤p'
+    when 'prÃ¤p' then 'PrÃ¤p'
+    when 'praep' then 'PrÃ¤p'
     when 'preposition' then 'PrÃ¤p'
+    when 'konj' then 'Konj'
+    when 'conj' then 'Konj'
     when 'conjunction' then 'Konj'
+    when 'num' then 'Num'
     when 'numeral' then 'Num'
+    when 'part' then 'Part'
     when 'particle' then 'Part'
+    when 'int' then 'Interj'
+    when 'interj' then 'Interj'
     when 'interjection' then 'Interj'
     else '' end`;
 }

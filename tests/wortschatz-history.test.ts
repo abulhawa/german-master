@@ -88,4 +88,53 @@ describe('Wortschatz history summary API', () => {
       },
     });
   });
+
+  it('aggregates signed-in Android Wortschatz attempts that use local POS codes', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-wortschatz-android-pos', expiresAt: new Date().toISOString() },
+      user: { id: 'user-android-pos', role: 'standard' },
+    } as any);
+
+    const wordResult = await dbContext.pool.query(
+      [
+        'insert into words (lemma, pos, level, english, approved, complete, sources_csv)',
+        'values ($1, $2, $3, $4, true, true, $5)',
+        'returning id',
+      ].join(' '),
+      ['Arbeitsvertrag', 'N', 'B2 Beruf', 'employment contract', 'android_b2_beruf'],
+    );
+    const wordId = wordResult.rows[0]!.id;
+
+    await dbContext.pool.query(
+      [
+        'insert into user_practice_history',
+        '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
+        'values',
+        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
+        "('user-android-pos', 'task-android-2', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
+      ].join(' '),
+    );
+
+    const response = await invokeApi('/api/wortschatz/history-summary');
+
+    expect(response.status).toBe(200);
+    expect(response.bodyJson).toMatchObject({
+      totalAttempts: 2,
+      correctAttempts: 1,
+      incorrectAttempts: 1,
+      practicedWordIds: [wordId],
+      correctWordIds: [wordId],
+      byWordId: {
+        [String(wordId)]: {
+          attempts: 2,
+          correct: 1,
+          incorrect: 1,
+        },
+      },
+    });
+  });
 });
