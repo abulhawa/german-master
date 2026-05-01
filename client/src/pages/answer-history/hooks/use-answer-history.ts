@@ -43,6 +43,8 @@ interface UseAnswerHistoryResult {
   resultOptions: ResultFilter[];
 }
 
+const REMOTE_HISTORY_LIMIT = 500;
+
 export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHistoryOptions = {}): UseAnswerHistoryResult {
   const authSession = useAuthSession();
   const isAuthenticated = Boolean(authSession.data?.user?.id);
@@ -68,7 +70,7 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
       setLoadError(null);
 
       try {
-        const remoteHistory = await fetchPracticeHistory({ deviceId, limit: 150 });
+        const remoteHistory = await fetchPracticeHistory({ deviceId, limit: REMOTE_HISTORY_LIMIT });
         if (cancelled) {
           return;
         }

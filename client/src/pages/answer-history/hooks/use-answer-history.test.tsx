@@ -100,4 +100,17 @@ describe("useAnswerHistory", () => {
       expect(result.current.history.map((entry) => entry.id)).toEqual(["user-table"]);
     });
   });
+
+  it("requests the Android-aligned recent history window", async () => {
+    mocks.fetchPracticeHistory.mockResolvedValue([]);
+
+    renderHook(() => useAnswerHistory());
+
+    await waitFor(() => {
+      expect(mocks.fetchPracticeHistory).toHaveBeenCalledWith({
+        deviceId: "device-123",
+        limit: 500,
+      });
+    });
+  });
 });

@@ -21,7 +21,7 @@ import {
 } from "./shared.js";
 
 const practiceHistoryQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(200).default(50),
+  limit: z.coerce.number().int().min(1).max(500).default(50),
   result: z.enum(["correct", "incorrect"]).optional(),
   level: levelSchema.optional(),
   deviceId: z.string().trim().min(6).max(64).optional(),

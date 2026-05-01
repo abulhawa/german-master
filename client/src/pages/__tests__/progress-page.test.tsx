@@ -213,7 +213,7 @@ describe("ProgressPage", () => {
     await waitFor(() => {
       expect(mocks.fetchPracticeHistory).toHaveBeenCalledWith({
         deviceId: "test-device-id",
-        limit: 150,
+        limit: 500,
       });
     });
   });
