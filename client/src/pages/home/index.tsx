@@ -509,7 +509,7 @@ export default function Home() {
               >
                 Skip to next
               </Button>
-              <Link href="/answers" className="flex-1">
+              <Link href="/progress" className="flex-1">
                 <Button
                   variant="secondary"
                   className="w-full rounded-2xl text-base sm:h-12"

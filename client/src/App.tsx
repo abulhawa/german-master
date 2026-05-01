@@ -15,6 +15,7 @@ import { ADMIN_FEATURE_ENABLED } from "@/config/admin-feature";
 const HomePage = lazy(() => import("@/pages/home"));
 const WritingPage = lazy(() => import("@/pages/writing"));
 const WortschatzPage = lazy(() => import("@/pages/wortschatz"));
+const ProgressPage = lazy(() => import("@/pages/progress"));
 const AnswerHistoryPage = lazy(() => import("@/pages/answer-history"));
 const AnalyticsPage = lazy(() => import("@/pages/analytics"));
 const AdminPage = ADMIN_FEATURE_ENABLED ? lazy(() => import("@/pages/admin")) : null;
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/" component={HomePage} />
         <Route path="/writing" component={WritingPage} />
         <Route path="/wortschatz" component={WortschatzPage} />
+        <Route path="/progress" component={ProgressPage} />
         <Route path="/answers" component={AnswerHistoryPage} />
         <Route path="/analytics" component={AnalyticsPage} />
         {ADMIN_FEATURE_ENABLED && AdminEnrichmentPage ? (

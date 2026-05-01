@@ -211,13 +211,13 @@ const AdminWordsPage = () => {
                   Back to practice
                 </Button>
               </Link>
-              <Link href="/analytics">
+              <Link href="/progress">
                 <Button
                   className="rounded-2xl px-5"
                   debugId={`${PAGE_DEBUG_ID}-topbar-analytics-button`}
                   id={`${PAGE_DEBUG_ID}-topbar-analytics-button`}
                 >
-                  Open analytics
+                  Open progress
                 </Button>
               </Link>
               <Link href="/admin/enrichment">

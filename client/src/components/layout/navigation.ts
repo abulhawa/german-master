@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles, PenLine, BookOpen, History, Compass, Settings2 } from "lucide-react";
+import { Sparkles, PenLine, BookOpen, BarChart3, Settings2 } from "lucide-react";
 import { ADMIN_FEATURE_ENABLED } from "@/config/admin-feature";
 
 export interface AppNavigationItem {
@@ -30,14 +30,9 @@ const BASE_PRIMARY_NAVIGATION_ITEMS: AppNavigationItem[] = [
     exact: true,
   },
   {
-    href: "/answers",
-    label: "Answer history",
-    icon: History,
-  },
-  {
-    href: "/analytics",
-    label: "Analytics",
-    icon: Compass,
+    href: "/progress",
+    label: "Progress",
+    icon: BarChart3,
   },
   ...(ADMIN_FEATURE_ENABLED
     ? ([

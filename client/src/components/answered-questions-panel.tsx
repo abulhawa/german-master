@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PracticeMode } from "@/lib/types";
-import { getTaskTypeLabel } from "@/lib/task-metadata";
+import { getProgressTaskTypeLabel } from "@/lib/task-metadata";
 import { getAnswerHistoryDisplayLevel, type AnsweredQuestion } from "@/lib/answer-history";
 import type { AnswerHistoryLexemeSnapshot } from "@shared";
 import { derivePromptLemmaFromEntry } from "@/lib/prompt-lemma";
@@ -163,7 +163,7 @@ export function AnsweredQuestionsPanel({
                       {item.result === "correct" ? "Correct" : "Incorrect"}
                     </Badge>
                     <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                      {mode ? MODE_LABELS[mode] ?? mode : getTaskTypeLabel(item.taskType)}
+                      {mode ? MODE_LABELS[mode] ?? mode : getProgressTaskTypeLabel(item.taskType)}
                     </span>
                     <span className="text-xs text-muted-foreground">Level {level}</span>
                     <span className="text-xs text-muted-foreground">

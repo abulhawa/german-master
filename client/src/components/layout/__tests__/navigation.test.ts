@@ -8,8 +8,7 @@ describe('navigation helpers', () => {
       '/',
       '/writing',
       '/wortschatz',
-      '/answers',
-      '/analytics',
+      '/progress',
     ]);
   });
 
@@ -18,6 +17,6 @@ describe('navigation helpers', () => {
     expect(isNavigationItemActive('/wortschatz/drill', { href: '/wortschatz', exact: true })).toBe(
       false,
     );
-    expect(isNavigationItemActive('/answers', { href: '/wortschatz', exact: true })).toBe(false);
+    expect(isNavigationItemActive('/progress', { href: '/wortschatz', exact: true })).toBe(false);
   });
 });

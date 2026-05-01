@@ -55,6 +55,23 @@ export function getTaskTypeLabel(taskType: TaskType): string {
   return getTaskTypeCopy(taskType).label;
 }
 
+export function getProgressTaskTypeLabel(taskType: TaskType): string {
+  switch (taskType) {
+    case 'conjugate_form':
+      return 'verb_conjugation';
+    case 'noun_case_declension':
+      return 'noun_case_declension';
+    case 'adj_ending':
+      return 'adjective_declension';
+    case 'vocabulary_drill':
+      return 'vocabulary_drill';
+    case 'b2_writing_prompt':
+      return 'B2 writing prompt';
+    default:
+      return taskType;
+  }
+}
+
 export function getTaskTypeDescription(taskType: TaskType): string {
   return getTaskTypeCopy(taskType).description;
 }
