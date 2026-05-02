@@ -130,6 +130,10 @@ export async function upsertTaskInventory(
     .onConflictDoUpdate({
       target: taskSpecsTable.id,
       set: {
+        lexemeId: sql`excluded.lexeme_id`,
+        pos: sql`excluded.pos`,
+        taskType: sql`excluded.task_type`,
+        renderer: sql`excluded.renderer`,
         prompt: sql`excluded.prompt`,
         solution: sql`excluded.solution`,
         hints: sql`excluded.hints`,

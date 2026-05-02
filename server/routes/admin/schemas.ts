@@ -1,8 +1,12 @@
 import { z } from "zod";
 import { canonicalizeExamples, type WordExample } from "@shared";
+import { normaliseLegacyPartOfSpeech } from "@shared/pos-normalizer";
 import { isRecord } from "../shared.js";
 
-const partOfSpeechSchema = z.enum(["V", "N", "Adj", "Adv", "Pron", "Det", "Pr\u00e4p", "Konj", "Num", "Part", "Interj"]);
+const partOfSpeechSchema = z.preprocess(
+  (value) => normaliseLegacyPartOfSpeech(value) ?? value,
+  z.enum(["V", "N", "Adj", "Adv", "Pron", "Det", "Pr\u00e4p", "Konj", "Num", "Part", "Interj"]),
+);
 
 const optionalText = (max: number) =>
   z
@@ -167,7 +171,13 @@ const prepositionAttributesSchema = z
 
 const posAttributesSchema = z
   .object({
-    pos: optionalText(20),
+    pos: z
+      .preprocess((value) => {
+        if (value === undefined) return undefined;
+        if (value === null) return null;
+        return normaliseLegacyPartOfSpeech(value) ?? value;
+      }, z.union([partOfSpeechSchema, z.null()]))
+      .optional(),
     preposition: prepositionAttributesSchema.nullable().optional(),
     tags: z.array(trimmedString(100)).optional(),
     notes: z.array(trimmedString(200)).optional(),

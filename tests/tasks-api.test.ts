@@ -901,33 +901,6 @@ describe('tasks API', () => {
       legacyVocabularyResolutionFailure: 'word_not_found',
     });
 
-    const unsupported = await dbContext.pool.query<{ id: number }>(
-      [
-        'insert into words',
-        '(lemma, pos, level, english, approved, complete)',
-        'values ($1, $2, $3, $4, true, true)',
-        'returning id',
-      ].join(' '),
-      ['Fehlerwort', 'Unsupported', 'B2', 'unsupported'],
-    );
-    const unsupportedResponse = await invokeApi('/api/submission', {
-      method: 'POST',
-      body: {
-        taskId: `word_${unsupported.rows[0]!.id}`,
-        lexemeId: `word_${unsupported.rows[0]!.id}`,
-        taskType: 'vocabulary_drill',
-        pos: 'N',
-        renderer: 'word_card',
-        deviceId: 'legacy-failure-device-2',
-        result: 'incorrect',
-        timeSpentMs: 100,
-      },
-    });
-    expect(unsupportedResponse.status).toBe(404);
-    expect((unsupportedResponse.bodyJson as any).details).toMatchObject({
-      legacyVocabularyResolutionFailure: 'unsupported_pos',
-    });
-
     const missingLexeme = await dbContext.pool.query<{ id: number }>(
       [
         'insert into words',

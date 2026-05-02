@@ -179,6 +179,9 @@ export async function upsertTaskSpecChunk(
     .onConflictDoUpdate({
       target: taskSpecs.id,
       set: {
+        pos: sql`excluded.pos`,
+        taskType: sql`excluded.task_type`,
+        renderer: sql`excluded.renderer`,
         prompt: sql`excluded.prompt`,
         solution: sql`excluded.solution`,
         hints: sql`excluded.hints`,
@@ -203,5 +206,13 @@ function mapLexemePosToWordPosSql(column: typeof lexemes.pos) {
     when 'verb' then 'V'
     when 'noun' then 'N'
     when 'adjective' then 'Adj'
+    when 'adverb' then 'Adv'
+    when 'pronoun' then 'Pron'
+    when 'determiner' then 'Det'
+    when 'preposition' then 'Pr\u00e4p'
+    when 'conjunction' then 'Konj'
+    when 'numeral' then 'Num'
+    when 'particle' then 'Part'
+    when 'interjection' then 'Interj'
     else '' end`;
 }

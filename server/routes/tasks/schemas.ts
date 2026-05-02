@@ -1,6 +1,7 @@
 import { and, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { LexemePos, TaskType } from "@shared";
+import { LEXEME_PARTS_OF_SPEECH, normaliseLexemePartOfSpeech } from "@shared/pos-normalizer";
 import { taskRegistry } from "../../tasks/registry.js";
 import { isRecord, levelSchema, normaliseExampleRecord } from "../shared.js";
 
@@ -57,29 +58,10 @@ export const submissionSchema = z
     }
   });
 
-const KNOWN_LEXEME_POS = new Set<LexemePos>([
-  "verb",
-  "noun",
-  "adjective",
-  "adverb",
-  "pronoun",
-  "determiner",
-  "preposition",
-  "conjunction",
-  "numeral",
-  "particle",
-  "interjection",
-]);
+const KNOWN_LEXEME_POS = new Set<LexemePos>(LEXEME_PARTS_OF_SPEECH);
 
 export function normaliseTaskPosFilter(value: string): LexemePos | null {
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) return null;
-  if (["verb", "verbs", "v"].includes(normalized)) return "verb";
-  if (["noun", "nouns", "n"].includes(normalized)) return "noun";
-  if (["adjective", "adjectives", "adj"].includes(normalized)) return "adjective";
-  return KNOWN_LEXEME_POS.has(normalized as LexemePos)
-    ? (normalized as LexemePos)
-    : null;
+  return normaliseLexemePartOfSpeech(value);
 }
 
 export function parseTaskTypeFilter(value: string): TaskType | null {
@@ -120,13 +102,6 @@ export function normaliseTaskPrompt(prompt: unknown): Record<string, unknown> {
 }
 
 export function asLexemePos(value: string | null | undefined): LexemePos | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return null;
-  }
-  return KNOWN_LEXEME_POS.has(normalized as LexemePos) ? (normalized as LexemePos) : null;
+  return normaliseLexemePartOfSpeech(value);
 }
 

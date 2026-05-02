@@ -7,6 +7,7 @@ import {
   normaliseBoolean,
   normaliseExamples,
   normaliseLevel,
+  normalisePos,
   normaliseString,
   normalizeStringArray,
   parseBooleanish,
@@ -20,6 +21,13 @@ describe('seed normalizers', () => {
     expect(normaliseString(null)).toBeNull();
     expect(normaliseLevel('b1')).toBe('B1');
     expect(normaliseLevel('custom')).toBe('custom');
+  });
+
+  it('normalises POS aliases and mojibake variants to canonical legacy tags', () => {
+    expect(normalisePos(' verb ')).toBe('V');
+    expect(normalisePos('adjective')).toBe('Adj');
+    expect(normalisePos('PrÃ¤p')).toBe('Präp');
+    expect(normalisePos('preposition')).toBe('Präp');
   });
 
   it('coerces booleans from various forms', () => {
@@ -75,6 +83,7 @@ describe('seed normalizers', () => {
     expect(merged?.preposition?.cases).toEqual(['Akkusativ', 'Dativ']);
     expect(merged?.preposition?.notes).toEqual(['movement']);
     expect(merged?.notes).toEqual(['usage']);
+    expect(merged?.pos).toBe('Präp');
     expect(merged?.tags).toEqual(['additional', 'core']);
   });
 

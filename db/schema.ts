@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -76,7 +77,13 @@ export const words = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("words_lemma_pos_idx").on(table.lemma, table.pos)],
+  (table) => [
+    uniqueIndex("words_lemma_pos_idx").on(table.lemma, table.pos),
+    check(
+      "words_pos_normalized_chk",
+      sql`${table.pos} IN ('V', 'N', 'Adj', 'Adv', 'Pron', 'Det', 'Pr\u00e4p', 'Konj', 'Num', 'Part', 'Interj')`,
+    ),
+  ],
 );
 
 
@@ -101,7 +108,13 @@ export const lexemes = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     revision: integer("revision").notNull().default(1),
   },
-  (table) => [uniqueIndex("lexemes_lemma_pos_idx").on(table.lemma, table.pos)],
+  (table) => [
+    uniqueIndex("lexemes_lemma_pos_idx").on(table.lemma, table.pos),
+    check(
+      "lexemes_pos_normalized_chk",
+      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+    ),
+  ],
 );
 
 export const inflections = pgTable(
@@ -156,6 +169,10 @@ export const taskSpecs = pgTable(
       table.revision,
     ),
     index("task_specs_pos_idx").on(table.pos),
+    check(
+      "task_specs_pos_normalized_chk",
+      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+    ),
   ],
 );
 
@@ -197,6 +214,10 @@ export const practiceHistory = pgTable(
     index("practice_history_pos_idx").on(table.pos),
     index("practice_history_submitted_idx").on(table.submittedAt),
     index("practice_history_device_idx").on(table.deviceId),
+    check(
+      "practice_history_pos_normalized_chk",
+      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+    ),
   ],
 );
 
@@ -227,6 +248,10 @@ export const practiceLog = pgTable(
     index("practice_log_user_idx").on(table.userId),
     uniqueIndex("practice_log_user_task_idx").on(table.taskId, table.userId, table.cefrLevel),
     uniqueIndex("practice_log_device_task_idx").on(table.taskId, table.deviceId, table.cefrLevel),
+    check(
+      "practice_log_pos_normalized_chk",
+      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+    ),
   ],
 );
 
@@ -255,6 +280,10 @@ export const userPracticeHistory = pgTable(
     index("user_practice_history_task_idx").on(table.taskId),
     index("user_practice_history_submitted_idx").on(table.submittedAt),
     index("user_practice_history_device_idx").on(table.deviceId),
+    check(
+      "user_practice_history_pos_normalized_chk",
+      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+    ),
   ],
 );
 

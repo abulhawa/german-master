@@ -1,4 +1,5 @@
 import type { LexemePos } from '@shared/task-registry';
+import { normaliseLexemePartOfSpeech } from '@shared/pos-normalizer';
 
 import { taskSpecs } from '@db/schema';
 
@@ -649,29 +650,7 @@ export function normaliseGenderValue(value: string | null): SimpleGender | Compo
 }
 
 export function asLexemePos(value: string | null | undefined): LexemePos | null {
-  if (!value) {
-    return null;
-  }
-  const normalised = value.trim().toLowerCase();
-  if (!normalised) {
-    return null;
-  }
-  if (
-    normalised === 'verb' ||
-    normalised === 'noun' ||
-    normalised === 'adjective' ||
-    normalised === 'adverb' ||
-    normalised === 'pronoun' ||
-    normalised === 'determiner' ||
-    normalised === 'preposition' ||
-    normalised === 'conjunction' ||
-    normalised === 'numeral' ||
-    normalised === 'particle' ||
-    normalised === 'interjection'
-  ) {
-    return normalised as LexemePos;
-  }
-  return null;
+  return normaliseLexemePartOfSpeech(value);
 }
 
 export const __TEST_ONLY__ = {

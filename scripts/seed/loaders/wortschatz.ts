@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { ANDROID_B2_BERUF_SOURCE, ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import type { PartOfSpeech } from '@shared/types';
 
 import type { RawWordRow } from '../types';
@@ -101,61 +102,7 @@ function findHeaderIndex(headerMap: Map<string, number>, ...candidates: string[]
 }
 
 function normalizePos(raw: string): PartOfSpeech | null {
-  const token = normalizeToken(raw);
-  switch (token) {
-    case 'v':
-    case 'verb':
-    case 'verben':
-      return 'V';
-    case 'n':
-    case 'noun':
-    case 'nomen':
-    case 'substantiv':
-    case 'subst':
-    case 'propn':
-    case 'propernoun':
-      return 'N';
-    case 'adj':
-    case 'adjective':
-    case 'adjektiv':
-      return 'Adj';
-    case 'adv':
-    case 'adverb':
-      return 'Adv';
-    case 'prep':
-    case 'preposition':
-    case 'adp':
-    case 'praeposition':
-      return 'Präp';
-    case 'conj':
-    case 'conjunction':
-    case 'konjunktion':
-    case 'cconj':
-    case 'sconj':
-      return 'Konj';
-    case 'pron':
-    case 'pronomen':
-    case 'pronoun':
-      return 'Pron';
-    case 'int':
-    case 'intj':
-    case 'interjektion':
-    case 'interjection':
-      return 'Interj';
-    case 'art':
-    case 'article':
-    case 'artikel':
-    case 'det':
-    case 'determiner':
-      return 'Det';
-    case 'num':
-    case 'numerale':
-    case 'numeral':
-    case 'zahlwort':
-      return 'Num';
-    default:
-      return null;
-  }
+  return normaliseLegacyPartOfSpeech(raw);
 }
 
 function splitLemmaAndPlural(rawWord: string, pos: PartOfSpeech): [string, string | null] {

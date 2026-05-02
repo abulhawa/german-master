@@ -65,6 +65,13 @@ describe('applyMigrations', () => {
       ),
     ).rejects.toThrow(/unique/i);
 
+    await expect(
+      pool.query(
+        "insert into lexemes (id, lemma, language, pos, source_ids, metadata) values ($1, $2, 'de', 'Verb', $3::jsonb, $4::jsonb)",
+        ['lex:bad-pos', 'laufen', '[]', '{}'],
+      ),
+    ).rejects.toThrow(/check|constraint/i);
+
     await pool.query(
       [
         "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",

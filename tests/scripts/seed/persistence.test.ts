@@ -70,6 +70,7 @@ describe('seed persistence', () => {
       complete: true,
       translations: null,
       examples: null,
+      posAttributes: { pos: 'verb', tags: ['core'] },
       enrichmentAppliedAt: null,
       enrichmentMethod: null,
     },
@@ -79,7 +80,11 @@ describe('seed persistence', () => {
     const db = new FakeDb([]);
     await persistence.insertWordsBatch(db as unknown as any, aggregated);
     expect(db.inserted).toHaveLength(1);
-    expect(db.inserted[0][0]).toMatchObject({ lemma: 'laufen', pos: 'V' });
+    expect(db.inserted[0][0]).toMatchObject({
+      lemma: 'laufen',
+      pos: 'V',
+      posAttributes: { pos: 'V', tags: ['core'] },
+    });
   });
 
   it('syncs legacy words by deleting missing entries and inserting batches', async () => {

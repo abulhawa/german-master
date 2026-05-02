@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { ANDROID_B2_BERUF_SOURCE } from '@shared/content-sources';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import type { PartOfSpeech, WordPosAttributes } from '@shared/types';
 
 import { LEVEL_ORDER } from '../constants';
@@ -78,7 +79,7 @@ interface PosFileDefinition {
 }
 
 export function keyFor(lemma: string, pos: string): string {
-  return `${lemma.toLowerCase()}::${pos}`;
+  return `${lemma.toLowerCase()}::${normaliseLegacyPartOfSpeech(pos) ?? pos.trim()}`;
 }
 
 function hasSourceTag(value: string | null | undefined, target: string): boolean {
@@ -611,7 +612,7 @@ export async function aggregateWords(rootDir: string): Promise<AggregatedWordWit
     wordsWithMetadata.push({
       key,
       lemma: value.lemma,
-      pos: value.pos as AggregatedWordWithKey['pos'],
+      pos: (normaliseLegacyPartOfSpeech(value.pos) ?? value.pos) as AggregatedWordWithKey['pos'],
       level: value.level ?? null,
       english: value.english ?? null,
       exampleDe: value.exampleDe ?? null,
@@ -631,6 +632,7 @@ export async function aggregateWords(rootDir: string): Promise<AggregatedWordWit
       complete,
       translations: value.translations ?? null,
       examples: value.examples ?? null,
+      posAttributes: value.posAttributes ?? null,
       enrichmentAppliedAt: value.enrichmentAppliedAt ?? null,
       enrichmentMethod: value.enrichmentMethod ?? null,
       sourcesCsv: value.sourcesCsv ?? null,

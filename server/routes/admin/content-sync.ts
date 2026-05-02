@@ -1,6 +1,7 @@
 import { db, taskSpecs, words, type Word } from '@db';
 
 import { MANUAL_ADMIN_SOURCE } from '@shared/content-sources';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 
 import { buildLexemeInventory, buildTaskInventory, upsertLexemeInventory } from '../../../scripts/etl/golden';
 import type { AggregatedWord } from '../../../scripts/etl/types';
@@ -11,9 +12,14 @@ import { resetTaskSpecCache } from '../../cache/task-specs-cache.js';
 const TASK_INSERT_BATCH_SIZE = 500;
 
 function toAggregatedWord(word: Word): AggregatedWord {
+  const pos = normaliseLegacyPartOfSpeech(word.pos);
+  if (!pos) {
+    throw new Error(`Unsupported word POS while rebuilding derived content: ${word.pos}`);
+  }
+
   return {
     lemma: word.lemma,
-    pos: word.pos as AggregatedWord['pos'],
+    pos,
     level: word.level ?? null,
     english: word.english ?? null,
     exampleDe: word.exampleDe ?? null,

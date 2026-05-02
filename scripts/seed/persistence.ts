@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 
 import { words } from '@db/schema';
 import { MANUAL_ADMIN_SOURCE } from '@shared/content-sources';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 
 import { buildLexemeInventory, upsertLexemeInventory as persistLexemeInventory } from '../etl/golden';
 import { chunkArray } from '../etl/utils';
@@ -9,6 +10,7 @@ import { WORDS_BATCH_SIZE } from './constants';
 import type { DatabaseClient } from './database';
 import type { AggregatedWordWithKey } from './types';
 import { keyFor } from './loaders/words';
+import { mergeWordPosAttributes } from './normalizers';
 
 function toDateOrNull(value: string | null | undefined): Date | null {
   if (!value) {
@@ -16,6 +18,14 @@ function toDateOrNull(value: string | null | undefined): Date | null {
   }
   const date = new Date(value);
   return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function normaliseWordPosOrThrow(value: string): string {
+  const normalized = normaliseLegacyPartOfSpeech(value);
+  if (!normalized) {
+    throw new Error(`Unsupported word POS: ${value}`);
+  }
+  return normalized;
 }
 
 async function deleteWordBatch(
@@ -47,7 +57,7 @@ export async function insertWordsBatch(
     .values(
       batch.map((word) => ({
         lemma: word.lemma,
-        pos: word.pos,
+        pos: normaliseWordPosOrThrow(word.pos),
         level: word.level,
         english: word.english,
         exampleDe: word.exampleDe,
@@ -69,6 +79,7 @@ export async function insertWordsBatch(
         sourceNotes: word.sourceNotes ?? null,
         translations: word.translations ?? null,
         examples: word.examples ?? null,
+        posAttributes: mergeWordPosAttributes(null, word.posAttributes),
         enrichmentAppliedAt: toDateOrNull(word.enrichmentAppliedAt),
         enrichmentMethod: word.enrichmentMethod ?? null,
       })),
@@ -97,6 +108,7 @@ export async function insertWordsBatch(
         sourceNotes: sql`excluded.source_notes`,
         translations: sql`excluded.translations`,
         examples: sql`excluded.examples`,
+        posAttributes: sql`excluded.pos_attributes`,
         enrichmentAppliedAt: sql`excluded.enrichment_applied_at`,
         enrichmentMethod: sql`excluded.enrichment_method`,
         updatedAt: sql`now()`,

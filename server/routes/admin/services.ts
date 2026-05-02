@@ -8,6 +8,7 @@ import {
   normalizeWordExamples,
 } from "@shared";
 import { MANUAL_ADMIN_SOURCE } from "@shared/content-sources";
+import { normaliseLegacyPartOfSpeech } from "@shared/pos-normalizer";
 import { buildProviderFirstWordEnrichment } from "../../services/provider-word-enrichment.js";
 import { rebuildDerivedContentFromWords } from "./content-sync.js";
 import { mergeLegacyExampleFields, type WordCreateInput, type WordUpdateInput } from "./schemas.js";
@@ -62,8 +63,9 @@ export async function listWords(filters: WordListFilters): Promise<WordListResul
   const { pos, level, approvalFilter, completeFilter, enrichedFilter, search, page, perPage } = filters;
 
   const conditions: any[] = [];
-  if (pos) {
-    conditions.push(eq(words.pos, pos));
+  const normalizedPos = normaliseLegacyPartOfSpeech(pos);
+  if (normalizedPos) {
+    conditions.push(eq(words.pos, normalizedPos));
   }
   if (level) {
     conditions.push(eq(words.level, level));
@@ -377,8 +379,9 @@ export async function runWordEnrichmentBatch(
   if (onlyIncomplete) {
     conditions.push(eq(words.complete, false));
   }
-  if (pos) {
-    conditions.push(eq(words.pos, pos));
+  const normalizedPos = normaliseLegacyPartOfSpeech(pos);
+  if (normalizedPos) {
+    conditions.push(eq(words.pos, normalizedPos));
   }
   if (level) {
     conditions.push(eq(words.level, level));

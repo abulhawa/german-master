@@ -71,6 +71,13 @@
       "when": 1760647457783,
       "tag": "0009_drop_background_job_runs",
       "breakpoints": false
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1760647458783,
+      "tag": "0010_normalize_pos_values",
+      "breakpoints": false
     }
   ]
 }

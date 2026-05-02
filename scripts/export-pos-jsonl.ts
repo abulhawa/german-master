@@ -6,6 +6,7 @@ import { asc, inArray } from 'drizzle-orm';
 
 import { getDb } from '@db';
 import { words } from '@db/schema';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import type { WordExample, WordPosAttributes } from '@shared/types';
 
 type WordRow = typeof words.$inferSelect;
@@ -154,6 +155,10 @@ function parseArgs(argv: readonly string[]): SupportedPos[] | null {
 }
 
 function normalisePos(value: string): SupportedPos | null {
+  const resolved = normaliseLegacyPartOfSpeech(value);
+  if (resolved && POS_EXPORTS[resolved as SupportedPos]) {
+    return resolved as SupportedPos;
+  }
   const direct = value as SupportedPos;
   if (POS_EXPORTS[direct]) {
     return direct;
@@ -287,9 +292,13 @@ export async function exportPos(
   pos: SupportedPos,
   outputDir: string,
 ): Promise<{ count: number; file: string }> {
-  const definition = POS_EXPORTS[pos];
+  const normalizedPos = normalisePos(pos);
+  if (!normalizedPos) {
+    throw new Error(`Unsupported POS export: ${pos}`);
+  }
+  const definition = POS_EXPORTS[normalizedPos];
   const db = getDb();
-  const filters = definition.synonyms ? [pos, ...definition.synonyms] : [pos];
+  const filters = definition.synonyms ? [normalizedPos, ...definition.synonyms] : [normalizedPos];
 
   const rows = await db
     .select({

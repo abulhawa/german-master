@@ -6,6 +6,7 @@ import {
   type WordPosAttributes,
   type WordTranslation,
 } from '@shared';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 
 import type { WordUpdateInput } from '../routes/admin/schemas.js';
 import { buildGroqWordEnrichment } from './groq-word-enrichment.js';
@@ -516,8 +517,9 @@ function normalizePosAttributes(value: Word['posAttributes'] | WordPosAttributes
   }
 
   const normalized: WordPosAttributes = {};
-  if (typeof value.pos === 'string' && value.pos.trim()) {
-    normalized.pos = value.pos.trim();
+  const pos = normaliseLegacyPartOfSpeech(value.pos);
+  if (pos) {
+    normalized.pos = pos;
   }
 
   const preposition = normalizePrepositionAttributes(value.preposition ?? null);
@@ -653,8 +655,9 @@ function toWordUpdatePosAttributes(
   }
 
   const next: PosAttributesUpdate = {};
-  if (typeof value.pos === 'string' && value.pos.trim()) {
-    next.pos = value.pos.trim();
+  const pos = normaliseLegacyPartOfSpeech(value.pos);
+  if (pos) {
+    next.pos = pos;
   }
 
   const tags = sortStrings(value.tags ?? []);

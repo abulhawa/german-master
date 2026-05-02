@@ -435,7 +435,8 @@ export function createSubmitTaskHandler(): RequestHandler {
       return sendError(res, 500, "Task configuration invalid", "TASK_INVALID_POS");
     }
 
-    if (!asLexemePos(taskRow.pos)) {
+    const normalizedTaskPos = asLexemePos(taskRow.pos);
+    if (!normalizedTaskPos) {
       console.error("Task has unsupported part of speech", {
         taskId: resolvedTaskId,
         pos: taskRow.pos,
@@ -510,7 +511,7 @@ export function createSubmitTaskHandler(): RequestHandler {
       const practiceHistoryValues = {
         taskId: resolvedTaskId,
         lexemeId: taskRow.lexemeId!,
-        pos: taskRow.pos!,
+        pos: normalizedTaskPos,
         taskType: taskRow.taskType!,
         renderer: taskRow.renderer!,
         deviceId: payload.deviceId,
@@ -538,7 +539,7 @@ export function createSubmitTaskHandler(): RequestHandler {
           taskId: resolvedTaskId,
           lexemeId: taskRow.lexemeId!,
           lemma: taskRow.lexemeLemma ?? taskRow.lexemeId!,
-          pos: taskRow.pos!,
+          pos: normalizedTaskPos,
           taskType: taskRow.taskType!,
           renderer: taskRow.renderer!,
           deviceId: payload.deviceId,
@@ -557,7 +558,7 @@ export function createSubmitTaskHandler(): RequestHandler {
       await logPracticeAttempt(db, {
         taskId: resolvedTaskId,
         lexemeId: taskRow.lexemeId!,
-        pos: taskRow.pos!,
+        pos: normalizedTaskPos,
         taskType: taskRow.taskType!,
         deviceId: payload.deviceId ?? null,
         userId: sessionUserId,

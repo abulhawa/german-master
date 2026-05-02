@@ -1,7 +1,8 @@
 import { normalizeWordExample } from '@shared/examples';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import type { PartOfSpeech, WordExample, WordPosAttributes, WordTranslation } from '@shared/types';
 
-import { EXTERNAL_POS_VALUES, LEVEL_ORDER, POS_MAP } from './constants';
+import { LEVEL_ORDER } from './constants';
 import type { BasePosJsonRecord, FallbackExampleInput } from './types';
 
 export function normaliseString(value: unknown): string | null {
@@ -35,38 +36,7 @@ export function normaliseLevel(level: unknown): string | null {
 }
 
 export function normalisePos(raw: unknown): PartOfSpeech | null {
-  if (raw === undefined || raw === null) return null;
-  const value = String(raw).trim();
-  if (!value) return null;
-  if ((EXTERNAL_POS_VALUES as readonly string[]).includes(value)) {
-    return value as PartOfSpeech;
-  }
-  const upper = value.toUpperCase();
-  switch (upper) {
-    case 'ADJ':
-      return 'Adj';
-    case 'ADV':
-      return 'Adv';
-    case 'PRON':
-      return 'Pron';
-    case 'DET':
-      return 'Det';
-    case 'PRÄP':
-    case 'PRAEP':
-      return 'Präp';
-    case 'KONJ':
-      return 'Konj';
-    case 'NUM':
-      return 'Num';
-    case 'PART':
-      return 'Part';
-    case 'INTERJ':
-      return 'Interj';
-    default:
-      break;
-  }
-  const mapped = POS_MAP.get(value.toLowerCase());
-  return mapped ?? null;
+  return normaliseLegacyPartOfSpeech(raw);
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -297,12 +267,12 @@ export function mergeWordPosAttributes(
   incoming: WordPosAttributes | null | undefined,
 ): WordPosAttributes | null {
   const next: WordPosAttributes = {};
-  const existingPos = existing?.pos ?? null;
-  const incomingPos = incoming?.pos ?? null;
-  if (existingPos?.trim()) {
-    next.pos = existingPos.trim();
-  } else if (incomingPos?.trim()) {
-    next.pos = incomingPos.trim();
+  const existingPos = normaliseLegacyPartOfSpeech(existing?.pos);
+  const incomingPos = normaliseLegacyPartOfSpeech(incoming?.pos);
+  if (existingPos) {
+    next.pos = existingPos;
+  } else if (incomingPos) {
+    next.pos = incomingPos;
   }
 
   const collectPrepositionValues = (

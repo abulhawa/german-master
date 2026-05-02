@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { normaliseLexemePartOfSpeech } from "@shared/pos-normalizer";
 
 type Schema = typeof import("@db/schema");
 
@@ -18,6 +19,10 @@ export async function logPracticeAttempt(
   database: NodePgDatabase<Schema>,
   attempt: PracticeLogAttempt,
 ): Promise<void> {
+  const pos = normaliseLexemePartOfSpeech(attempt.pos);
+  if (!pos) {
+    throw new Error(`Unsupported practice log POS: ${attempt.pos}`);
+  }
   const deviceScopeKey = attempt.deviceId ? `device:${attempt.deviceId}` : null;
   const userScopeKey = attempt.userId ? `user:${attempt.userId}` : null;
 
@@ -49,7 +54,7 @@ export async function logPracticeAttempt(
           (
             ${attempt.taskId},
             ${attempt.lexemeId},
-            ${attempt.pos},
+            ${pos},
             ${attempt.taskType},
             ${attempt.deviceId ?? null},
             ${null},
@@ -60,7 +65,7 @@ export async function logPracticeAttempt(
           (
             ${attempt.taskId},
             ${attempt.lexemeId},
-            ${attempt.pos},
+            ${pos},
             ${attempt.taskType},
             ${null},
             ${attempt.userId ?? null},

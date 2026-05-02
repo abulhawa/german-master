@@ -5,3 +5,4 @@ export * from "./source-ids.js";
 export * from "./text-normalizer.js";
 export * from "./examples.js";
 export * from "./content-sources.js";
+export * from "./pos-normalizer.js";

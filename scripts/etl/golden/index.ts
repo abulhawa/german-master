@@ -1,4 +1,5 @@
 import type { PartOfSpeech } from '@shared';
+import { mapLegacyPartOfSpeechToLexeme } from '@shared/pos-normalizer';
 import { type LexemePos } from '@shared/task-registry';
 import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '@shared/content-sources';
 
@@ -470,6 +471,10 @@ function pruneUndefined<T extends Record<string, unknown>>(value: T): T {
 }
 
 function mapPos(pos: PartOfSpeech): LexemePos {
+  const mapped = mapLegacyPartOfSpeechToLexeme(pos);
+  if (mapped) {
+    return mapped;
+  }
   switch (pos) {
     case 'V':
       return 'verb';

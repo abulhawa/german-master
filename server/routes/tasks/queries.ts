@@ -11,6 +11,7 @@ import {
   words,
 } from "@db";
 import type { LexemePos, TaskType } from "@shared";
+import { mapLegacyPartOfSpeechToLexeme } from "@shared/pos-normalizer";
 import { UNSPECIFIED_CEFR_LEVEL, normaliseString } from "../shared.js";
 import { combineFilters } from "./schemas.js";
 import { getQueryCache, setQueryCache } from "../../cache/query-cache.js";
@@ -505,32 +506,7 @@ export async function findVocabularyTaskIdByLegacyWordId(wordRef: string): Promi
 }
 
 function mapLegacyWordPosToLexemePos(pos: string | null | undefined): LexemePos | null {
-  switch (pos) {
-    case "V":
-      return "verb";
-    case "N":
-      return "noun";
-    case "Adj":
-      return "adjective";
-    case "Adv":
-      return "adverb";
-    case "Pron":
-      return "pronoun";
-    case "Det":
-      return "determiner";
-    case "Pr\u00e4p":
-      return "preposition";
-    case "Konj":
-      return "conjunction";
-    case "Num":
-      return "numeral";
-    case "Part":
-      return "particle";
-    case "Interj":
-      return "interjection";
-    default:
-      return null;
-  }
+  return mapLegacyPartOfSpeechToLexeme(pos);
 }
 
 export type { TaskRow };

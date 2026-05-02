@@ -60,9 +60,24 @@ describe('seed loaders', () => {
         },
       ]);
 
+      await setupPosFile(tmpRoot, 'prepositions.jsonl', [
+        {
+          lemma: 'wegen',
+          level: 'B1',
+          english: 'because of',
+          preposition: { cases: ['Genitiv'] },
+          examples: [
+            {
+              sentence: 'Wegen des Regens bleiben wir zuhause.',
+              translations: { en: 'Because of the rain we stay home.' },
+            },
+          ],
+        },
+      ]);
+
       const aggregated = await aggregateWords(tmpRoot);
 
-      expect(aggregated).toHaveLength(2);
+      expect(aggregated).toHaveLength(3);
       const laufen = aggregated.find((entry) => entry.lemma === 'laufen');
       expect(laufen?.approved).toBe(true);
       expect(laufen?.complete).toBe(true);
@@ -71,6 +86,13 @@ describe('seed loaders', () => {
       const haus = aggregated.find((entry) => entry.lemma === 'Haus');
       expect(haus?.gender).toBe('das');
       expect(haus?.plural).toBe('Häuser');
+
+      const wegen = aggregated.find((entry) => entry.lemma === 'wegen');
+      expect(wegen?.pos).toBe('Präp');
+      expect(wegen?.posAttributes).toMatchObject({
+        pos: 'Präp',
+        preposition: { cases: ['Genitiv'] },
+      });
     } finally {
       await fs.rm(tmpRoot, { recursive: true, force: true });
     }

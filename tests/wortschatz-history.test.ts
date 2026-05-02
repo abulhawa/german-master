@@ -89,7 +89,7 @@ describe('Wortschatz history summary API', () => {
     });
   });
 
-  it('aggregates signed-in Android Wortschatz attempts that use local POS codes', async () => {
+  it('aggregates signed-in Android Wortschatz attempts with normalized POS codes', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -114,8 +114,8 @@ describe('Wortschatz history summary API', () => {
         'insert into user_practice_history',
         '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
         'values',
-        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
-        "('user-android-pos', 'task-android-2', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
+        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
+        "('user-android-pos', 'task-android-2', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
       ].join(' '),
     );
 

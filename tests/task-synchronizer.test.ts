@@ -435,7 +435,7 @@ describe('task synchronizer delta sync', () => {
     expect(persistedManualTask).toHaveLength(1);
   });
 
-  it('removes task specs when a lexeme is no longer supported', async () => {
+  it('removes task specs when a lexeme becomes template-ineligible', async () => {
     await ensureTaskSpecsSynced();
 
     const targetLexemeId = await getLexemeIdByLemma('gehen');
@@ -457,7 +457,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'unsupported_pos', updatedAt: updatedTimestamp })
+      .set({ pos: 'conjunction', metadata: { level: 'A1' }, updatedAt: updatedTimestamp })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();
@@ -476,7 +476,7 @@ describe('task synchronizer delta sync', () => {
     expect(afterSiblingCount.length).toBe(beforeSiblingCount.length);
   });
 
-  it('removes manual b2_writing_prompt tasks when the lexeme becomes unsupported', async () => {
+  it('removes manual b2_writing_prompt tasks when the lexeme becomes template-ineligible', async () => {
     await ensureTaskSpecsSynced();
 
     const targetLexemeId = await getLexemeIdByLemma('gehen');
@@ -492,7 +492,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'unsupported_pos', updatedAt: new Date(Date.now() + 1000) })
+      .set({ pos: 'conjunction', metadata: { level: 'A1' }, updatedAt: new Date(Date.now() + 1000) })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();
