@@ -21,7 +21,7 @@ export const POS_OPTIONS: Array<{ label: string; value: Word['pos'] | 'ALL' }> =
   { label: 'Interjections', value: 'Interj' },
 ];
 
-export const LEVEL_OPTIONS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export const LEVEL_OPTIONS = ['All', 'A1', 'A2', 'B1', 'B2'] as const;
 
 export const APPROVAL_FILTER_OPTIONS: Array<{ label: string; value: ApprovalFilter }> = [
   { label: 'All', value: 'all' },

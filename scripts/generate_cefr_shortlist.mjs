@@ -192,7 +192,7 @@ for (const row of rows) {
 
 fs.writeFileSync(path.join(outputDir, "cefr-verb-shortlist.csv"), csvLines.join("\n"));
 
-const summaryLevels = ["A1", "A2", "B1", "B2", "C1", "C2", "DTZ"];
+const summaryLevels = ["A1", "A2", "B1", "B2", "DTZ"];
 const summary = Object.fromEntries(summaryLevels.map((level) => [level, 0]));
 for (const row of rows) {
   if (summary[row.level] !== undefined) {

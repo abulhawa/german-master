@@ -285,7 +285,7 @@ export interface WortschatzMessages {
     progressLabel: string;
     progressDetail: string;
   };
-  levelLabels: Record<'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1', string>;
+  levelLabels: Record<'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2', string>;
   posLabels: Record<PartOfSpeech, string>;
   list: {
     emptyTitle: string;
@@ -541,7 +541,6 @@ const MESSAGES: Record<Locale, AppMessages> = {
         A2: 'A2',
         B1: 'B1',
         B2: 'B2',
-        C1: 'C1',
       },
       posLabels: {
         V: 'Verbs',
@@ -1003,7 +1002,6 @@ const MESSAGES: Record<Locale, AppMessages> = {
         A2: 'A2',
         B1: 'B1',
         B2: 'B2',
-        C1: 'C1',
       },
       posLabels: {
         V: 'Verben',

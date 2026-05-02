@@ -40,8 +40,6 @@ function SettingsLevelSelect() {
             <SelectItem value="A2">A2</SelectItem>
             <SelectItem value="B1">B1</SelectItem>
             <SelectItem value="B2">B2</SelectItem>
-            <SelectItem value="C1">C1</SelectItem>
-            <SelectItem value="C2">C2</SelectItem>
           </SelectContent>
         </Select>
       </DialogContent>

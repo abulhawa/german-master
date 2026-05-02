@@ -4,7 +4,7 @@ import { getAnswerHistoryFilterLevels, type AnsweredQuestion } from "@/lib/answe
 export type LevelFilter = CEFRLevel | "B2 Beruf" | "all";
 export type ResultFilter = "all" | "correct" | "incorrect";
 
-export const LEVEL_FILTERS: LevelFilter[] = ["all", "A1", "A2", "B1", "B2", "B2 Beruf", "C1", "C2"];
+export const LEVEL_FILTERS: LevelFilter[] = ["all", "A1", "A2", "B1", "B2", "B2 Beruf"];
 export const RESULT_FILTERS: ResultFilter[] = ["all", "correct", "incorrect"];
 
 export const ANSWER_HISTORY_IDS = {

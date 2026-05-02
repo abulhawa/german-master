@@ -6,9 +6,9 @@ const STORAGE_KEY = 'wortschatz.state';
 const STORAGE_CONTEXT = 'wortschatz';
 
 export type WortschatzTab = 'drill' | 'list';
-export type WortschatzLevelFilter = 'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+export type WortschatzLevelFilter = 'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2';
 
-export const ALL_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['B2 Beruf', 'A1', 'A2', 'B1', 'B2', 'C1'];
+export const ALL_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['B2 Beruf', 'A1', 'A2', 'B1', 'B2'];
 export const DEFAULT_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['B2 Beruf'];
 
 export const ALL_WORTSCHATZ_POS: PartOfSpeech[] = [

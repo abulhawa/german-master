@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { AuthSession } from "../auth/index.js";
 import type { CEFRLevel } from "@shared";
 
-export const levelSchema = z.enum(["A1", "A2", "B1", "B2", "C1", "C2"]);
-export const LEVEL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
+export const levelSchema = z.enum(["A1", "A2", "B1", "B2"]);
+export const LEVEL_ORDER = ["A1", "A2", "B1", "B2"] as const;
 export const UNSPECIFIED_CEFR_LEVEL = "__";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

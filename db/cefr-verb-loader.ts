@@ -120,5 +120,5 @@ function buildLevelReference(level: CEFRLevel, row: CefrCsvRow): string {
 }
 
 function isCefrLevel(value: string): value is CEFRLevel {
-  return value === "A1" || value === "A2" || value === "B1" || value === "B2" || value === "C1" || value === "C2";
+  return value === "A1" || value === "A2" || value === "B1" || value === "B2";
 }

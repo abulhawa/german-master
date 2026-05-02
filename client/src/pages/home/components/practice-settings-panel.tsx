@@ -3,7 +3,7 @@ import { UserMenuControl } from '@/components/auth/user-menu-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { CEFRLevel, TaskType } from '@shared';
 
-const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2'];
 
 interface VerbLevelSelectProps {
   value: CEFRLevel;

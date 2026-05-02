@@ -14,7 +14,7 @@ export { b2Verbs };
 export { c1Verbs };
 export { c2Verbs };
 
-export const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const satisfies ReadonlyArray<CEFRLevel>;
+export const CEFR_LEVELS = ["A1", "A2", "B1", "B2"] as const satisfies ReadonlyArray<CEFRLevel>;
 
 export type VerbListsByLevel = Record<CEFRLevel, ReadonlyArray<GermanVerb>>;
 

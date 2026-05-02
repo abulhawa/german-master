@@ -57,7 +57,7 @@ const WRITING_LEVEL_LABELS: Record<WritingLevelFilter, string> = {
 };
 
 const WRITING_LEVEL_QUERY: Record<WritingLevelFilter, CEFRLevel[]> = {
-  any: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+  any: ['A1', 'A2', 'B1', 'B2'],
   B1: ['B1'],
   B2: ['B2'],
 };

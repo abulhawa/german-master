@@ -30,7 +30,7 @@ describe('Writing page', () => {
       expect(mockFetchPracticeTasks).toHaveBeenCalledWith(
         expect.objectContaining({
           taskTypes: ['b2_writing_prompt'],
-          level: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+          level: ['A1', 'A2', 'B1', 'B2'],
           limit: 15,
         }),
       );

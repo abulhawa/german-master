@@ -359,6 +359,8 @@ describe('Wortschatz page', () => {
     const sheet = await screen.findByRole('dialog');
     expect(within(sheet).getByText('Level')).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: 'B2 Beruf' })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: 'C1' })).not.toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: 'C2' })).not.toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: 'Verbs' })).toBeInTheDocument();
   });
 });
