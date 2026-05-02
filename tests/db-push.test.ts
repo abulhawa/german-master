@@ -33,12 +33,22 @@ describe('applyMigrations', () => {
       "select table_name from information_schema.tables where table_schema = 'public'",
     );
 
-    expect(tables.rows.map((row) => row.table_name)).toEqual(
+    const tableNames = tables.rows.map((row) => row.table_name);
+
+    expect(tableNames).toEqual(
       expect.arrayContaining([
         'lexemes',
         'task_specs',
         'practice_history',
         'user_practice_history',
+      ]),
+    );
+    expect(tableNames).not.toEqual(
+      expect.arrayContaining([
+        'auth_accounts',
+        'auth_sessions',
+        'auth_users',
+        'auth_verifications',
       ]),
     );
 

@@ -7,9 +7,9 @@ This checklist summarises the minimum configuration required before promoting a 
 | Variable | Expected production value |
 | --- | --- |
 | `DATABASE_URL` | Managed Postgres connection string (e.g. Supabase `postgresql://` URI). Must not point at `localhost` or other development hosts. |
-| `BETTER_AUTH_SECRET` / `AUTH_SECRET` | 32+ character secret (recommended 64-byte) used by Better Auth. Never reuse sandbox secrets. |
+| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Production Supabase project URL. Use the same project as the Android app so account IDs and mobile history stay aligned. |
+| `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` | Production Supabase anon key used by the server and browser to verify Supabase Auth sessions. |
 | `APP_ORIGIN` | Comma-separated HTTPS origins for the public site. Each entry should use the canonical production domain (no `localhost` or `http://`). |
-| `BETTER_AUTH_URL` | HTTPS base URL Better Auth uses in email links. When omitted it falls back to the first `APP_ORIGIN` entry; configure explicitly when multiple origins exist. |
 | `RESEND_API_KEY` | Production API key copied from the Resend dashboard (prefix `re_`). |
 | `RESEND_FROM_EMAIL` | Verified sender identity, e.g. `German Verb Master <no-reply@germanverbmaster.com>`. |
 | `ENABLE_ADMIN_FEATURES` | Leave unset or `false` so admin-only routes remain disabled in production. |
