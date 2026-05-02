@@ -183,7 +183,7 @@ export function createWortschatzRouter(): Router {
           count: count(),
         })
         .from(practiceHistory)
-        .innerJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
+        .leftJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
         .innerJoin(
           words,
           sql`lower(${words.lemma}) = lower(coalesce(${practiceHistory.lemma}, ${lexemes.lemma}))
