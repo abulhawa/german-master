@@ -64,6 +64,13 @@
       "when": 1760647456783,
       "tag": "0008_drop_better_auth_tables",
       "breakpoints": false
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1760647457783,
+      "tag": "0009_drop_background_job_runs",
+      "breakpoints": false
     }
   ]
 }

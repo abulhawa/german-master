@@ -3,7 +3,6 @@ import { sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import {
   boolean,
-  doublePrecision,
   index,
   integer,
   jsonb,
@@ -25,8 +24,6 @@ export const enrichmentMethodEnum = pgEnum("enrichment_method", [
   "manual_entry",
   "preexisting",
 ]);
-
-export const jobRunStatusEnum = pgEnum("job_run_status", ["running", "success", "failed"]);
 
 export const words = pgTable(
   "words",
@@ -258,26 +255,6 @@ export const userPracticeHistory = pgTable(
     index("user_practice_history_task_idx").on(table.taskId),
     index("user_practice_history_submitted_idx").on(table.submittedAt),
     index("user_practice_history_device_idx").on(table.deviceId),
-  ],
-);
-
-export const backgroundJobRuns = pgTable(
-  "background_job_runs",
-  {
-    id: serial("id").primaryKey(),
-    jobName: text("job_name").notNull(),
-    status: jobRunStatusEnum("status").notNull(),
-    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
-    finishedAt: timestamp("finished_at", { withTimezone: true }),
-    durationMs: doublePrecision("duration_ms"),
-    stats: jsonb("stats").$type<Record<string, unknown> | null>(),
-    error: jsonb("error").$type<Record<string, unknown> | null>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (table) => [
-    index("background_job_runs_job_name_started_idx").on(table.jobName, table.startedAt),
-    index("background_job_runs_status_idx").on(table.status),
   ],
 );
 

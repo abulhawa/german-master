@@ -30,11 +30,6 @@ const enumTypeDefinitions: readonly EnumTypeDefinition[] = [
     name: "practice_result",
     values: ["correct", "incorrect"],
   },
-  {
-    schema: "public",
-    name: "job_run_status",
-    values: ["running", "success", "failed"],
-  },
 ];
 
 function escapeRegex(value: string): string {

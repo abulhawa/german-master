@@ -80,11 +80,9 @@ Run `npm run validate:env` (or let `npm run build` invoke it automatically) to f
 
 On Vercel, configure the project to run `npm install`, `npm run db:push`, `npm run seed`, and `npm run build` as the build step. Point the “Output Directory” at `dist/public` so static assets are uploaded automatically, and map `/api/*` routes to the bundled handler (see `server/api/vercel-handler.ts`) via the existing `vercel.json` configuration.
 
-### Serverless scheduler
+### Task-spec refresh
 
-When admin features are enabled, the adaptive scheduler relies on `POST /api/jobs/regenerate-queues` to recompute spaced-repetition queues. In Vercel, create a [Cron Job](https://vercel.com/docs/cron-jobs) with an interval that matches your release cadence (e.g. hourly) and set the target URL to `https://<your-app-domain>/api/jobs/regenerate-queues`. Authorise it with the same `ADMIN_API_TOKEN` used in production so the background job continues to run when the API is fully serverless. Skip this job entirely when `ENABLE_ADMIN_FEATURES` resolves to `false` (the production default).
-
-Each invocation now records an execution row in the `background_job_runs` table and emits structured metrics. Configure `JOB_ALERT_WEBHOOK_URL` to send a JSON payload to your on-call channel whenever the regeneration job fails so incidents are surfaced automatically. You can also schedule `npm run monitor:queues` (which executes `scripts/check-job-health.ts`) from your monitoring platform; it exits non-zero when the latest run failed, stalled, or has not succeeded within the configured freshness window. Override the defaults with `JOB_MAX_AGE_MINUTES`, `JOB_MAX_RUNNING_MINUTES`, or `JOB_NAME` when watching additional jobs.
+Task specs refresh automatically when the app serves task requests. The API calls the synchronizer through `ensureTaskSpecCacheFresh()`, using `task_sync_state` as the checkpoint so normal app traffic keeps generated queues current without a separate admin cron job.
 
 ### Provisioning Supabase
 
@@ -128,7 +126,7 @@ Shut down the container with `docker stop gvm-postgres` when you are done.
 1. `npm run db:push`
 2. `npm run seed`
 3. `npm run test:all`
-4. Deploy the build and confirm the Vercel Cron job for `/api/jobs/regenerate-queues` is still scheduled and returning `200`.
+4. Deploy the build and smoke-test `/api/tasks`.
 
 ## Theme system
 - Global color tokens live in `client/src/index.css`. Light and dark palettes share the same variable names (`--bg`, `--fg`, `--accent`, etc.), so components only reference semantic utilities such as `bg-card`, `text-fg`, and `ring-accent`.

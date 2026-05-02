@@ -49,6 +49,7 @@ describe('applyMigrations', () => {
         'auth_sessions',
         'auth_users',
         'auth_verifications',
+        'background_job_runs',
       ]),
     );
 

@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { runRegenerateQueuesJob } from "../jobs/regenerate-queues.js";
 import { requireAdminAccess } from "./admin/auth.js";
 import {
   parseLimitParam,
@@ -20,8 +19,6 @@ import {
   updateWordById,
 } from "./admin/services.js";
 import {
-  getSessionUserId,
-  isRecord,
   normaliseString,
   normaliseStringOrNull,
   sendError,
@@ -33,31 +30,6 @@ function firstRouteParam(value: string | string[] | undefined): string | undefin
 
 export function createAdminRouter(): Router {
   const router = Router();
-
-  router.post("/jobs/regenerate-queues", requireAdminAccess, async (req, res, next) => {
-    try {
-      const reason = isRecord(req.body) ? normaliseString(req.body.reason) ?? null : null;
-      const triggeredBy = getSessionUserId(req.authSession);
-
-      const result = await runRegenerateQueuesJob({
-        triggeredBy,
-        reason,
-      });
-
-      res.json({
-        status: "completed",
-        job: "regenerate_queues",
-        runId: result.jobRunId,
-        startedAt: result.startedAt.toISOString(),
-        finishedAt: result.finishedAt.toISOString(),
-        durationMs: result.durationMs,
-        latestTouchedAt: result.latestTouchedAt ? result.latestTouchedAt.toISOString() : null,
-        stats: result.stats,
-      });
-    } catch (error) {
-      next(error);
-    }
-  });
 
   router.get("/words", requireAdminAccess, async (req, res) => {
     try {
