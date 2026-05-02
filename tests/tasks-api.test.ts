@@ -589,6 +589,66 @@ describe('tasks API', () => {
     expect(history[0].promptSummary).toBe('canonical prompt');
   });
 
+  it('reads identity-based synced history rows without canonical lexeme joins', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'identity-history-user-1';
+    const deviceId = 'identity-history-device-1';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-identity-history', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    await dbContext.pool.query(
+      [
+        'insert into practice_history',
+        '(task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, user_id, result, submitted_answer, correct_answer, response_ms, submitted_at, answered_at, cefr_level, metadata)',
+        'values',
+        '($1, $2, $3, $4, $5, $6, $7, $8, $9::practice_result, $10, $11, 900, $12, $12, $13, $14::jsonb)',
+      ].join(' '),
+      [
+        'identity:noun:projekt:vocabulary_drill',
+        'identity:noun:projekt',
+        'Projekt',
+        'noun',
+        'vocabulary_drill',
+        'word_card',
+        deviceId,
+        userId,
+        'correct',
+        'Projekt',
+        'project',
+        new Date('2025-03-03T10:00:00.000Z').toISOString(),
+        'B1',
+        JSON.stringify({
+          submittedResponse: 'Projekt',
+          expectedResponse: 'project',
+          promptSummary: 'Projekt - vocabulary',
+        }),
+      ],
+    );
+
+    const historyResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=10`);
+    expect(historyResponse.status).toBe(200);
+    const history = ((historyResponse.bodyJson as any).history ?? []) as any[];
+
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({
+      taskId: 'identity:noun:projekt:vocabulary_drill',
+      lexemeId: 'identity:noun:projekt',
+      pos: 'noun',
+      taskType: 'vocabulary_drill',
+      promptSummary: 'Projekt - vocabulary',
+    });
+    expect(history[0].lexeme).toMatchObject({
+      id: 'identity:noun:projekt',
+      lemma: 'Projekt',
+      pos: 'noun',
+    });
+  });
+
   it('returns the Android-aligned recent history window for signed-in progress', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');

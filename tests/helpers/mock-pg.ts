@@ -51,7 +51,7 @@ function sanitizeSql(text: string): string[] {
   return normalized
     .split(/;(?=(?:[^']*'[^']*')*[^']*$)/)
     .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+    .filter((statement) => statement.replace(/^\s*--.*$/gm, '').trim().length > 0);
 }
 
 function createEmptyResult(): QueryResult<any> {
@@ -271,6 +271,24 @@ export function createMockPool(): Pool {
       const fillerLength = filler.length || 1;
       const repeated = filler.repeat(Math.ceil(padLength / fillerLength)).slice(0, padLength);
       return repeated + value;
+    },
+  });
+  mem.public.registerFunction({
+    name: 'split_part',
+    args: ['text', 'text', 'int4'],
+    returns: 'text',
+    allowNullArguments: true,
+    implementation: (input: string | null, delimiter: string | null, field: number | null) => {
+      if (input === null || input === undefined || delimiter === null || delimiter === undefined || field === null) {
+        return null;
+      }
+
+      const index = Number(field);
+      if (!Number.isFinite(index) || index <= 0) {
+        return '';
+      }
+
+      return String(input).split(String(delimiter))[index - 1] ?? '';
     },
   });
   mem.public.registerFunction({

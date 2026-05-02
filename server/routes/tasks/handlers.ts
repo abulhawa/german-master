@@ -7,7 +7,6 @@ import {
   lexemes,
   practiceHistory,
   taskSpecs,
-  userPracticeHistory,
 } from "@db";
 import { ensureTaskSpecCacheFresh } from "../../cache/task-specs-cache.js";
 import { logPracticeAttempt } from "../../practice-log.js";

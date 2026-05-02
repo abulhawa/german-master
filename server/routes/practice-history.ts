@@ -19,6 +19,7 @@ import {
   normaliseString,
   sendError,
 } from "./shared.js";
+import { normaliseLexemePartOfSpeech } from "@shared/pos-normalizer";
 
 const practiceHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(50),
@@ -67,7 +68,8 @@ function toStringList(value: unknown): string[] {
 }
 
 function buildLexemeSnapshotFromRow(
-  row: Pick<PracticeHistoryRow, "lexemeId" | "lexemeLemma" | "pos" | "lexemeMetadata" | "cefrLevel">,
+  row: Pick<PracticeHistoryRow, "lexemeId" | "lemma" | "lexemeLemma" | "pos" | "lexemeMetadata" | "cefrLevel">,
+  pos: LexemePos,
 ): AnswerHistoryLexemeSnapshot {
   const metadata = normaliseLexemeMetadata(row.lexemeMetadata) ?? {};
   const exampleMeta = isRecord(metadata.example) ? metadata.example : null;
@@ -93,8 +95,8 @@ function buildLexemeSnapshotFromRow(
 
   return {
     id: row.lexemeId,
-    lemma: row.lexemeLemma ?? row.lexemeId,
-    pos: row.pos as LexemePos,
+    lemma: row.lexemeLemma ?? row.lemma ?? row.lexemeId,
+    pos,
     level,
     collections: collections.length ? collections : undefined,
     english: english ?? undefined,
@@ -115,7 +117,8 @@ function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
   const metadata = isRecord(row.metadata) ? row.metadata : {};
   const submittedResponse = row.submittedAnswer ?? (metadata.submittedResponse as string | null) ?? null;
   const expectedResponse = row.correctAnswer ?? (metadata.expectedResponse as string | null) ?? null;
-  const lexemeSnapshot = buildLexemeSnapshotFromRow(row);
+  const pos = normaliseLexemePartOfSpeech(row.pos) ?? (row.pos as LexemePos);
+  const lexemeSnapshot = buildLexemeSnapshotFromRow(row, pos);
   const answeredAt = row.answeredAt ?? row.submittedAt;
   const promptSummary = normaliseString(metadata.promptSummary)
     ?? `${row.lemma ?? lexemeSnapshot.lemma} – ${row.taskType.replace(/[_-]+/g, " ")}`;
@@ -128,7 +131,7 @@ function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
     taskId: row.taskId,
     lexemeId: row.lexemeId,
     taskType: row.taskType as TaskType,
-    pos: row.pos as LexemePos,
+    pos,
     renderer: row.renderer,
     result: row.result,
     submittedResponse,
@@ -207,7 +210,7 @@ export function createPracticeHistoryRouter(): Router {
           lexemeMetadata: lexemes.metadata,
         })
         .from(practiceHistory)
-        .innerJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id));
+        .leftJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id));
 
       let combinedFilter: SQL | null = identityFilter;
 
