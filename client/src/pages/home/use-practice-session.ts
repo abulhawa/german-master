@@ -275,7 +275,8 @@ export function useHomePracticeSession({
 
       try {
         const perTypeLimit = Math.max(1, Math.ceil(FETCH_LIMIT / activeTaskTypes.length));
-        const { tasksByType: fetchedTasks, errors: taskFetchErrors } = await fetchTasksForActiveTypes({
+        let shouldResetCompletedForNewCycle = false;
+        let { tasksByType: fetchedTasks, errors: taskFetchErrors } = await fetchTasksForActiveTypes({
           taskTypes: activeTaskTypes,
           perTypeLimit,
           resolveLevelForPos,
@@ -285,7 +286,29 @@ export function useHomePracticeSession({
           ...(mode === 'shuffle' ? { shuffleSeed: createShuffleSeed() } : {}),
         });
 
-        const tasks = shuffleArray(mergeTaskLists(fetchedTasks, FETCH_LIMIT));
+        let tasks = shuffleArray(mergeTaskLists(fetchedTasks, FETCH_LIMIT));
+
+        if (
+          !tasks.length &&
+          replace &&
+          mode === 'default' &&
+          normalizedExcludeTaskIds &&
+          !taskFetchErrors.length
+        ) {
+          const retry = await fetchTasksForActiveTypes({
+            taskTypes: activeTaskTypes,
+            perTypeLimit,
+            resolveLevelForPos,
+            levelOverride,
+            collectionOverride,
+            shuffleSeed: createShuffleSeed(),
+          });
+
+          fetchedTasks = retry.tasksByType;
+          taskFetchErrors = retry.errors;
+          tasks = shuffleArray(mergeTaskLists(fetchedTasks, FETCH_LIMIT));
+          shouldResetCompletedForNewCycle = tasks.length > 0;
+        }
 
         if (!tasks.length) {
           if (taskFetchErrors.length) {
@@ -326,10 +349,12 @@ export function useHomePracticeSession({
 
         let nextSessionState: PracticeSessionState | null = null;
         setSession((prev) => {
-          const baseState = replace ? clearSessionQueue(prev, { preserveCompleted: mode !== 'shuffle' }) : prev;
+          const baseState = replace
+            ? clearSessionQueue(prev, { preserveCompleted: mode !== 'shuffle' && !shouldResetCompletedForNewCycle })
+            : prev;
           const updatedState = enqueueTasks(baseState, tasks, {
             replace,
-            ignoreCompleted: mode === 'shuffle',
+            ignoreCompleted: mode === 'shuffle' || shouldResetCompletedForNewCycle,
           });
           nextSessionState = updatedState;
           return updatedState;

@@ -235,7 +235,7 @@ describe('Home navigation - practice workflows', () => {
     expect(screen.queryByRole('combobox', { name: /verb level/i })).not.toBeInTheDocument();
   });
 
-  it('reshuffles exhausted queues when manually reloading', async () => {
+  it('starts a fresh shuffled cycle when exclusions exhaust the current scope', async () => {
     seedPracticeSettings({
       preferredTaskTypes: ['conjugate_form'],
       defaultTaskType: 'conjugate_form',
@@ -260,15 +260,17 @@ describe('Home navigation - practice workflows', () => {
     const skipButton = await screen.findByRole('button', { name: /skip to next/i });
     await userEvent.click(skipButton);
 
-    await screen.findByText(/no tasks are queued right now/i);
-
-    const reloadButton = screen.getByRole('button', { name: /reload tasks/i });
-    await userEvent.click(reloadButton);
-
     await waitFor(() => {
       const card = screen.getByTestId('practice-card');
       expect(within(card).getByRole('heading', { name: 'bewerten', level: 1 })).toBeInTheDocument();
     });
+
+    expect(
+      mockFetchPracticeTasks.mock.calls.some(([options]) => options.excludeTaskIds?.includes(recycledTask.taskId)),
+    ).toBe(true);
+    expect(
+      mockFetchPracticeTasks.mock.calls.some(([options]) => !options.excludeTaskIds?.length),
+    ).toBe(true);
   });
 
   it('requests tasks for each preferred task type in settings', async () => {

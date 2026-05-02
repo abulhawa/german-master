@@ -82,7 +82,7 @@ describe('Writing page', () => {
     });
   });
 
-  it('reshuffles exhausted writing queues when manually reloading', async () => {
+  it('starts a fresh shuffled cycle when exclusions exhaust writing tasks', async () => {
     const recycledTask = buildPracticeTask('b2_writing_prompt', 7);
 
     mockFetchPracticeTasks.mockImplementation(async ({ excludeTaskIds }) => {
@@ -100,13 +100,16 @@ describe('Writing page', () => {
     const skipButton = await screen.findByRole('button', { name: /skip to next/i });
     await userEvent.click(skipButton);
 
-    await screen.findByText(/no writing tasks are queued right now/i);
-
-    const reloadButton = screen.getByRole('button', { name: /reload tasks/i });
-    await userEvent.click(reloadButton);
-
     await waitFor(() => {
       expect(screen.getByTestId('practice-card')).toBeInTheDocument();
     });
+
+    expect(await screen.findByText('Szenario 0-7')).toBeInTheDocument();
+    expect(
+      mockFetchPracticeTasks.mock.calls.some(([options]) => options.excludeTaskIds?.includes(recycledTask.taskId)),
+    ).toBe(true);
+    expect(
+      mockFetchPracticeTasks.mock.calls.some(([options]) => !options.excludeTaskIds?.length),
+    ).toBe(true);
   });
 });

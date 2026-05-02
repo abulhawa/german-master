@@ -141,6 +141,61 @@ describe('useHomePracticeSession', () => {
     });
   });
 
+  it('starts a fresh shuffled cycle when exclusions exhaust the available tasks', async () => {
+    const task = createRawTask(1);
+
+    let fetchCall = 0;
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(() => {
+      const payload =
+        fetchCall === 0
+          ? { tasksByType: { conjugate_form: [task] } }
+          : fetchCall === 1
+          ? { tasksByType: { conjugate_form: [] } }
+          : { tasksByType: { conjugate_form: [task] } };
+      fetchCall += 1;
+      return Promise.resolve(createJsonResponse(payload));
+    });
+
+    const { result } = renderHook(() =>
+      useHomePracticeSession({
+        activeTaskTypes: ['conjugate_form'],
+        sessionScopeKey: 'cycle-scope',
+        userId: 'user-1',
+        resolveLevelForPos: () => 'A1',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.activeTask).toBeDefined();
+    });
+
+    const active = result.current.activeTask as PracticeTask;
+    act(() => {
+      result.current.registerPendingResult({
+        task: active,
+        result: 'correct',
+        submittedResponse: null,
+        expectedResponse: active.expectedSolution,
+        promptSummary: `Answered ${active.taskId}`,
+        timeSpentMs: 500,
+        answeredAt: new Date().toISOString(),
+      });
+    });
+
+    act(() => {
+      result.current.continueToNext();
+    });
+
+    await waitFor(() => {
+      expect(fetchCall).toBeGreaterThanOrEqual(3);
+      expect(result.current.activeTask?.taskId).toBe(task.taskId);
+      expect(result.current.session.completed).toHaveLength(0);
+    });
+
+    expect(fetchMock.mock.calls[1]?.[0].toString()).toContain('excludeTaskIds=task-1');
+    expect(fetchMock.mock.calls[2]?.[0].toString()).not.toContain('excludeTaskIds=');
+  });
+
   it('replaces a fully skipped batch instead of looping the same tasks', async () => {
     const initialTasks = Array.from({ length: 4 }, (_, index) => createRawTask(index + 1));
     const nextTasks = Array.from({ length: 6 }, (_, index) => createRawTask(index + 101));
