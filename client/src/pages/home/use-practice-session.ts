@@ -6,7 +6,7 @@ import {
   completeTask,
   enqueueTasks,
   loadPracticeSession,
-  markLeitnerServerExhausted,
+  markServerExhausted,
   savePracticeSession,
   skipTask,
   type PracticeSessionState,
@@ -15,9 +15,9 @@ import type { PracticeTask, MultiTaskFetchOptions } from '@/lib/tasks';
 import { clientTaskRegistry, fetchPracticeTasksByType } from '@/lib/tasks';
 import type { CEFRLevel, LexemePos, TaskType } from '@shared';
 
-export const MIN_QUEUE_THRESHOLD = 5;
+export const MIN_QUEUE_THRESHOLD = 0;
 const FETCH_LIMIT = 15;
-const MAX_EXCLUDE_TASK_IDS = 30;
+const MAX_EXCLUDE_TASK_IDS = 100;
 
 type FetchPracticeTasksFn = (
   options: MultiTaskFetchOptions,
@@ -204,8 +204,6 @@ export function useHomePracticeSession({
   const sessionHydrationRef = useRef({ scopeKey: sessionScopeKey, userId });
   const previousScopeKeyRef = useRef(sessionScopeKey);
   const lastFailedQueueSignatureRef = useRef<string | null>(null);
-  const lastAutoReloadSignatureRef = useRef<string | null>(null);
-  const lastAllInteractedQueueSignatureRef = useRef<string | null>(null);
 
   const activeTask = session.activeTaskId ? tasksById[session.activeTaskId] : undefined;
   const queueSignature = useMemo(
@@ -254,16 +252,6 @@ export function useHomePracticeSession({
     sessionRef.current = session;
   }, [session]);
 
-  useEffect(() => {
-    if (
-      !session.leitner ||
-      session.leitner.totalUnique === 0 ||
-      session.leitner.seenUnique < session.leitner.totalUnique
-    ) {
-      lastAllInteractedQueueSignatureRef.current = null;
-    }
-  }, [session.leitner?.seenUnique, session.leitner?.totalUnique, session.leitner]);
-
   const fetchAndEnqueueTasks = useCallback(
     async (
       { replace = false, mode = 'default' }: { replace?: boolean; mode?: QueueReloadMode } = {},
@@ -277,7 +265,7 @@ export function useHomePracticeSession({
       const shouldResetExclusions = replace && mode === 'shuffle';
       const exclusionSources = shouldResetExclusions
         ? []
-        : [...currentSession.queue, ...currentSession.recent];
+        : [...currentSession.queue, ...currentSession.completed, ...currentSession.recent];
       const excludeTaskIds = Array.from(new Set(exclusionSources)).slice(0, MAX_EXCLUDE_TASK_IDS);
       const normalizedExcludeTaskIds = excludeTaskIds.length ? excludeTaskIds : undefined;
       const baseSignature = createQueueSignature(baseQueue, activeTaskTypes);
@@ -323,7 +311,7 @@ export function useHomePracticeSession({
         });
 
         if (!replace && !hasNewTasks) {
-          setSession((prev) => markLeitnerServerExhausted(prev));
+          setSession((prev) => markServerExhausted(prev));
           lastFailedQueueSignatureRef.current = baseSignature;
           return;
         }
@@ -338,8 +326,11 @@ export function useHomePracticeSession({
 
         let nextSessionState: PracticeSessionState | null = null;
         setSession((prev) => {
-          const baseState = replace ? clearSessionQueue(prev) : prev;
-          const updatedState = enqueueTasks(baseState, tasks, { replace });
+          const baseState = replace ? clearSessionQueue(prev, { preserveCompleted: mode !== 'shuffle' }) : prev;
+          const updatedState = enqueueTasks(baseState, tasks, {
+            replace,
+            ignoreCompleted: mode === 'shuffle',
+          });
           nextSessionState = updatedState;
           return updatedState;
         });
@@ -399,24 +390,8 @@ export function useHomePracticeSession({
       return;
     }
 
-    if (
-      session.leitner &&
-      session.leitner.totalUnique > 0 &&
-      session.leitner.seenUnique >= session.leitner.totalUnique &&
-      !isFetchingTasks &&
-      lastAllInteractedQueueSignatureRef.current !== queueSignature
-    ) {
-      lastAllInteractedQueueSignatureRef.current = queueSignature;
-      void fetchAndEnqueueTasks({ replace: true });
+    if (session.serverExhausted && session.queue.length > 0) {
       return;
-    }
-
-    if (session.leitner?.serverExhausted && session.queue.length > 0) {
-      return;
-    }
-
-    if (session.queue.length < MIN_QUEUE_THRESHOLD && !isFetchingTasks) {
-      void fetchAndEnqueueTasks();
     }
   }, [
     fetchAndEnqueueTasks,
@@ -424,10 +399,8 @@ export function useHomePracticeSession({
     isFetchingTasks,
     queueSignature,
     session.activeTaskId,
-    session.leitner?.serverExhausted,
-    session.leitner?.seenUnique,
-    session.leitner?.totalUnique,
     session.queue.length,
+    session.serverExhausted,
     tasksById,
   ]);
 
@@ -459,7 +432,21 @@ export function useHomePracticeSession({
       setSession((prev) => {
         const updated = completeTask(prev, taskId, current?.result);
 
-        if (!updated.queue.includes(taskId)) {
+        if (updated.activeTaskId === taskId && updated.queue.includes(taskId)) {
+          setTasksById((previous) => {
+            const task = previous[taskId];
+            if (!task) {
+              return previous;
+            }
+            return {
+              ...previous,
+              [taskId]: {
+                ...task,
+                assignedAt: new Date().toISOString(),
+              },
+            };
+          });
+        } else if (!updated.queue.includes(taskId)) {
           setTasksById((previous) => {
             if (!(taskId in previous)) {
               return previous;
@@ -492,21 +479,6 @@ export function useHomePracticeSession({
     await fetchAndEnqueueTasks({ replace: true, mode: options?.mode ?? 'default' });
   }, [fetchAndEnqueueTasks]);
 
-  useEffect(() => {
-    if (!session.leitner?.serverExhausted) {
-      lastAutoReloadSignatureRef.current = null;
-      return;
-    }
-
-    const signature = lastFailedQueueSignatureRef.current;
-    if (!signature || lastAutoReloadSignatureRef.current === signature) {
-      return;
-    }
-
-    lastAutoReloadSignatureRef.current = signature;
-    void reloadQueue();
-  }, [reloadQueue, session.leitner?.serverExhausted]);
-
   const resetFetchError = useCallback(() => {
     lastFailedQueueSignatureRef.current = null;
     setHasBlockingFetchError(false);
@@ -518,9 +490,9 @@ export function useHomePracticeSession({
       queueLength: session.queue.length,
       threshold: MIN_QUEUE_THRESHOLD,
       lastFailedSignature: lastFailedQueueSignatureRef.current,
-      isServerExhausted: Boolean(session.leitner?.serverExhausted),
+      isServerExhausted: session.serverExhausted,
     }),
-    [session.leitner?.serverExhausted, session.queue.length],
+    [session.queue.length, session.serverExhausted],
   );
 
   const registerPendingResult = useCallback((result: PracticeCardResult | null) => {

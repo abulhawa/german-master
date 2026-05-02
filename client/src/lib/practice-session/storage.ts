@@ -94,21 +94,27 @@ function sanitiseLoadedState(state: PracticeSessionState): PracticeSessionState 
     ? state.recent.filter((value): value is string => typeof value === 'string')
     : [];
   const uniqueRecent = Array.from(new Set(parsedRecent));
+  const parsedCompleted = Array.isArray(state.completed)
+    ? state.completed.filter((value): value is string => typeof value === 'string')
+    : [];
 
   const baseState = {
     ...createEmptySessionState(),
     ...state,
+    completed: Array.from(new Set(parsedCompleted)),
     recent: uniqueRecent.slice(0, MAX_RECENT_HISTORY),
+    isReviewSession: false,
+    serverExhausted: Boolean(state.serverExhausted),
   } satisfies PracticeSessionState;
 
   if (baseState.version < 2) {
     baseState.version = 2;
-    baseState.leitner = null;
-    baseState.isReviewSession = false;
   }
 
   if (baseState.version < CURRENT_SESSION_STATE_VERSION) {
     baseState.version = CURRENT_SESSION_STATE_VERSION;
+    baseState.isReviewSession = false;
+    baseState.serverExhausted = false;
   }
 
   return baseState;

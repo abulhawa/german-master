@@ -72,7 +72,7 @@ describe('useHomePracticeSession', () => {
     vi.restoreAllMocks();
   });
 
-  it('fetches a new queue once all tasks have been interacted with', async () => {
+  it('fetches a new random queue once the current queue is completed', async () => {
     const initialTasks = Array.from({ length: 6 }, (_, index) => createRawTask(index + 1));
     const nextTasks = Array.from({ length: 3 }, (_, index) => createRawTask(index + 101));
 
@@ -99,11 +99,10 @@ describe('useHomePracticeSession', () => {
       expect(result.current.activeTask).toBeDefined();
     });
 
-    const maxIterations = 30;
-    let allTasksSeen = false;
-
-    for (let iteration = 0; iteration < maxIterations; iteration += 1) {
-      await waitFor(() => result.current.activeTask);
+    for (let iteration = 0; iteration < initialTasks.length; iteration += 1) {
+      await waitFor(() => {
+        expect(result.current.activeTask).toBeDefined();
+      });
       const active = result.current.activeTask as PracticeTask | undefined;
       expect(active).toBeDefined();
       if (!active) {
@@ -126,19 +125,10 @@ describe('useHomePracticeSession', () => {
       act(() => {
         result.current.continueToNext();
       });
-
-      await waitFor(() => result.current.activeTask?.taskId !== active.taskId);
-
-      const leitner = result.current.session.leitner;
-      if (leitner && leitner.totalUnique > 0 && leitner.seenUnique >= leitner.totalUnique) {
-        allTasksSeen = true;
-        break;
-      }
     }
 
-    expect(allTasksSeen).toBe(true);
-
     await waitFor(() => {
+      expect(fetchCall).toBeGreaterThanOrEqual(2);
       const queue = result.current.session.queue;
       const queueSet = new Set(queue);
       for (const task of nextTasks) {
@@ -147,7 +137,6 @@ describe('useHomePracticeSession', () => {
       for (const task of initialTasks) {
         expect(queueSet.has(task.taskId)).toBe(false);
       }
-      expect(result.current.session.leitner?.seenUnique ?? 0).toBe(0);
       expect(fetchMock).toHaveBeenCalled();
     });
   });

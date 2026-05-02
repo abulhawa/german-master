@@ -1,6 +1,6 @@
 export { clearSessionQueue, createEmptySessionState, type PracticeSessionState } from './state';
 
-export { enqueueTasks, completeTask, skipTask, markLeitnerServerExhausted } from './queue';
+export { enqueueTasks, completeTask, skipTask, markServerExhausted } from './queue';
 
 export {
   loadPracticeSession,

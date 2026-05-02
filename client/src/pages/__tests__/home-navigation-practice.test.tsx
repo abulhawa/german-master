@@ -66,6 +66,12 @@ describe('Home navigation - practice workflows', () => {
 
     const skipButton = await screen.findByRole('button', { name: /skip to next/i });
     await userEvent.click(skipButton);
+    await waitFor(() => {
+      const updatedCard = screen.getByTestId('practice-card');
+      const nextLemma = within(updatedCard).getByRole('heading', { level: 1 }).textContent;
+      expect(nextLemma).not.toBe(initialLemma);
+    });
+    await userEvent.click(skipButton);
 
     await waitFor(() => {
       expect(mockFetchPracticeTasks.mock.calls.length).toBeGreaterThanOrEqual(2);
@@ -101,6 +107,23 @@ describe('Home navigation - practice workflows', () => {
 
     const nextButton = await screen.findByRole('button', { name: /next question/i });
     await userEvent.click(nextButton);
+
+    await waitFor(() => {
+      const updatedCard = screen.getByTestId('practice-card');
+      const nextLemma = within(updatedCard).getByRole('heading', { level: 1 }).textContent;
+      expect(nextLemma).not.toBe(initialLemma);
+    });
+
+    const secondCard = await screen.findByTestId('practice-card');
+    const secondLemma = within(secondCard).getByRole('heading', { level: 1 }).textContent ?? '';
+    const secondAnswerInput = within(secondCard).getByRole('textbox');
+    await userEvent.type(secondAnswerInput, `${secondLemma}-pp`);
+
+    const secondSubmitButton = within(secondCard).getByRole('button', { name: /check/i });
+    await userEvent.click(secondSubmitButton);
+
+    const secondNextButton = await screen.findByRole('button', { name: /next question/i });
+    await userEvent.click(secondNextButton);
 
     await waitFor(() => {
       expect(mockFetchPracticeTasks.mock.calls.length).toBeGreaterThanOrEqual(2);

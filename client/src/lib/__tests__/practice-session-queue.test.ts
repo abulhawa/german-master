@@ -35,36 +35,27 @@ function buildTask(taskId: string): PracticeTask<'conjugate_form'> {
   } satisfies PracticeTask<'conjugate_form'>;
 }
 
-function buildLeitnerSession(queue: string[]): PracticeSessionState {
+function buildSession(queue: string[]): PracticeSessionState {
   return {
     ...createEmptySessionState(),
     activeTaskId: queue[0] ?? null,
     queue,
-    leitner: {
-      intervals: [1, 3, 6],
-      step: 0,
-      seenUnique: 0,
-      totalUnique: queue.length,
-      serverExhausted: false,
-      entries: Object.fromEntries(
-        queue.map((taskId) => [taskId, { box: 0, dueStep: 0, seen: 0 }] as const),
-      ),
-    },
   } satisfies PracticeSessionState;
 }
 
 describe('practice session queue regressions', () => {
-  it('does not immediately requeue the only completed task', () => {
-    const state = buildLeitnerSession(['task-a']);
+  it('does not requeue a correctly completed task', () => {
+    const state = buildSession(['task-a']);
 
     const updated = completeTask(state, 'task-a', 'correct');
 
     expect(updated.queue).toEqual([]);
     expect(updated.activeTaskId).toBeNull();
+    expect(updated.completed).toContain('task-a');
   });
 
   it('does not re-enqueue recently completed tasks when new tasks arrive', () => {
-    const state = buildLeitnerSession(['task-a', 'task-b']);
+    const state = buildSession(['task-a', 'task-b']);
     const completed = completeTask(state, 'task-a', 'correct');
 
     const updated = enqueueTasks(completed, [buildTask('task-a'), buildTask('task-c')]);
@@ -75,7 +66,7 @@ describe('practice session queue regressions', () => {
   });
 
   it('does not re-enqueue recently skipped tasks when new tasks arrive', () => {
-    const state = buildLeitnerSession(['task-a', 'task-b']);
+    const state = buildSession(['task-a', 'task-b']);
     const skipped = skipTask(state, 'task-a');
 
     const updated = enqueueTasks(skipped, [buildTask('task-a'), buildTask('task-c')]);
@@ -83,5 +74,15 @@ describe('practice session queue regressions', () => {
     expect(updated.queue).toContain('task-b');
     expect(updated.queue).toContain('task-c');
     expect(updated.queue).not.toContain('task-a');
+  });
+
+  it('moves failed tasks to the back of the queue', () => {
+    const state = buildSession(['task-a', 'task-b']);
+
+    const updated = completeTask(state, 'task-a', 'incorrect');
+
+    expect(updated.queue).toEqual(['task-b', 'task-a']);
+    expect(updated.activeTaskId).toBe('task-b');
+    expect(updated.completed).not.toContain('task-a');
   });
 });

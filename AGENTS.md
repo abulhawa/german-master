@@ -18,3 +18,5 @@ For GitHub authentication details and additional setup guidance, refer to
 - Install the Playwright browsers once with `npx playwright install --with-deps chromium`.
 - Run `npm run test:e2e` for Chromium end-to-end coverage before submitting changes that touch UI components.
 - Run npm run check
+
+## Include a commit message at the end

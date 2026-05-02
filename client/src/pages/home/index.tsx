@@ -425,7 +425,7 @@ export default function Home() {
                         </div>
                       ) : null}
                       <PracticeCard
-                        key={activeTask.taskId}
+                        key={`${activeTask.taskId}:${activeTask.assignedAt}`}
                         task={activeTask}
                         settings={settings}
                         onResult={handleTaskResult}

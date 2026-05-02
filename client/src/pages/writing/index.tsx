@@ -333,7 +333,7 @@ export default function WritingPage() {
                   ) : activeTask ? (
                     <div id={WRITING_SECTION_IDS.activeCardWrapper}>
                       <PracticeCard
-                        key={activeTask.taskId}
+                        key={`${activeTask.taskId}:${activeTask.assignedAt}`}
                         task={activeTask}
                         settings={settings}
                         onResult={handleTaskResult}
