@@ -204,6 +204,9 @@ export const practiceHistory = pgTable(
     submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
     answeredAt: timestamp("answered_at", { withTimezone: true }),
     queuedAt: timestamp("queued_at", { withTimezone: true }),
+    lemma: text("lemma"),
+    submittedAnswer: text("submitted_answer"),
+    correctAnswer: text("correct_answer"),
     cefrLevel: text("cefr_level"),
     hintsUsed: boolean("hints_used").notNull().default(false),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
@@ -214,6 +217,7 @@ export const practiceHistory = pgTable(
     index("practice_history_pos_idx").on(table.pos),
     index("practice_history_submitted_idx").on(table.submittedAt),
     index("practice_history_device_idx").on(table.deviceId),
+    index("practice_history_user_idx").on(table.userId),
     check(
       "practice_history_pos_normalized_chk",
       sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
@@ -255,38 +259,6 @@ export const practiceLog = pgTable(
   ],
 );
 
-export const userPracticeHistory = pgTable(
-  "user_practice_history",
-  {
-    id: serial("id").primaryKey(),
-    userId: text("user_id").notNull(),
-    taskId: text("task_id").notNull(),
-    lexemeId: text("lexeme_id").notNull(),
-    lemma: text("lemma").notNull(),
-    pos: text("pos").notNull(),
-    taskType: text("task_type").notNull(),
-    renderer: text("renderer").notNull(),
-    deviceId: text("device_id").notNull(),
-    result: practiceResultEnum("result").notNull(),
-    submittedAnswer: text("submitted_answer").notNull(),
-    correctAnswer: text("correct_answer").notNull(),
-    responseMs: integer("response_ms").notNull(),
-    cefrLevel: text("cefr_level"),
-    hintsUsed: boolean("hints_used").notNull().default(false),
-    submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (table) => [
-    index("user_practice_history_user_idx").on(table.userId),
-    index("user_practice_history_task_idx").on(table.taskId),
-    index("user_practice_history_submitted_idx").on(table.submittedAt),
-    index("user_practice_history_device_idx").on(table.deviceId),
-    check(
-      "user_practice_history_pos_normalized_chk",
-      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
-    ),
-  ],
-);
-
 export const insertWordSchema = createInsertSchema(words);
 export const selectWordSchema = createSelectSchema(words);
 export type InsertWord = typeof words.$inferInsert;
@@ -297,7 +269,4 @@ export type InsertPracticeHistory = typeof practiceHistory.$inferInsert;
 
 export type PracticeLog = typeof practiceLog.$inferSelect;
 export type InsertPracticeLog = typeof practiceLog.$inferInsert;
-
-export type UserPracticeHistory = typeof userPracticeHistory.$inferSelect;
-export type InsertUserPracticeHistory = typeof userPracticeHistory.$inferInsert;
 

@@ -30,7 +30,7 @@ describe('Wortschatz history summary API', () => {
     }
   });
 
-  it('aggregates signed-in Wortschatz attempts from user_practice_history', async () => {
+  it('aggregates signed-in Wortschatz attempts from practice_history', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -59,14 +59,26 @@ describe('Wortschatz history summary API', () => {
     );
 
     await dbContext.pool.query(
+      "insert into lexemes (id, lemma, language, pos) values ('lex-1', 'Arbeitsvertrag', 'de', 'noun'), ('lex-2', 'Projekt', 'de', 'noun')",
+    );
+
+    await dbContext.pool.query(
       [
-        'insert into user_practice_history',
+        "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",
+        "values ('task-1', 'lex-1', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}'),",
+        "('task-3', 'lex-2', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}')",
+      ].join(" "),
+    );
+
+    await dbContext.pool.query(
+      [
+        'insert into practice_history',
         '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
         'values',
-        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'wortschatz_schnell_drill', 'wortschatz_schnell_drill', 'device-1', 'correct', 'known', 'known', 700, now()),",
-        "('user-123', 'task-2', 'lex-1', 'Arbeitsvertrag', 'noun', 'wortschatz_schnell_drill', 'wortschatz_schnell_drill', 'device-1', 'incorrect', 'missed', 'known', 800, now()),",
-        "('user-123', 'task-3', 'lex-2', 'Projekt', 'noun', 'wortschatz_schnell_drill', 'wortschatz_schnell_drill', 'device-1', 'correct', 'known', 'known', 900, now()),",
-        "('other-user', 'task-4', 'lex-1', 'Arbeitsvertrag', 'noun', 'wortschatz_schnell_drill', 'wortschatz_schnell_drill', 'device-2', 'correct', 'known', 'known', 900, now())",
+        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 700, now()),",
+        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'incorrect', 'missed', 'known', 800, now()),",
+        "('user-123', 'task-3', 'lex-2', 'Projekt', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 900, now()),",
+        "('other-user', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-2', 'correct', 'known', 'known', 900, now())",
       ].join(' '),
     );
 
@@ -110,12 +122,23 @@ describe('Wortschatz history summary API', () => {
     const wordId = wordResult.rows[0]!.id;
 
     await dbContext.pool.query(
+      "insert into lexemes (id, lemma, language, pos) values ('lex-android-1', 'Arbeitsvertrag', 'de', 'noun')",
+    );
+
+    await dbContext.pool.query(
       [
-        'insert into user_practice_history',
+        "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",
+        "values ('task-android-1', 'lex-android-1', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}')",
+      ].join(" "),
+    );
+
+    await dbContext.pool.query(
+      [
+        'insert into practice_history',
         '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
         'values',
         "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
-        "('user-android-pos', 'task-android-2', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
+        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
       ].join(' '),
     );
 

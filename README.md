@@ -61,7 +61,7 @@ Before running `npm run db:push` or `npm run seed` in any managed environment, s
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` – the same Supabase project exposed to the browser for Supabase Auth.
 - `RESEND_API_KEY` – Resend production API key used to deliver verification and password reset emails.
 - `RESEND_FROM_EMAIL` – verified sender (e.g. `German Verb Master <no-reply@example.com>`). Defaults to Resend's sandbox sender when omitted.
-- Google OAuth is configured in Supabase Auth; use the same Supabase project as Android so web Google login resolves to the same Supabase user ID and preserves `user_practice_history`.
+- Google OAuth is configured in Supabase Auth; use the same Supabase project as Android so web Google login resolves to the same Supabase user ID and preserves practice history.
 - `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` – optional Microsoft OAuth credentials.
 - `ENABLE_ADMIN_FEATURES` – toggles admin-only APIs and the `/admin` dashboard (defaults to `true` outside production, `false` in production).
 - `ADMIN_API_TOKEN` (optional) – required when admin features are enabled to authenticate ingestion tools targeting `/api/admin/*` routes.

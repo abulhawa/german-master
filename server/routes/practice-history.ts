@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { and, desc, eq, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { db, lexemes, practiceHistory, userPracticeHistory } from "@db";
+import { db, lexemes, practiceHistory } from "@db";
 import type {
   AnswerHistoryLexemeSnapshot,
   LexemePos,
@@ -35,10 +35,13 @@ type PracticeHistoryRow = {
   id: number;
   taskId: string;
   lexemeId: string;
+  lemma: string | null;
   pos: string;
   taskType: string;
   renderer: string;
   result: PracticeResult;
+  submittedAnswer: string | null;
+  correctAnswer: string | null;
   responseMs: number;
   submittedAt: Date;
   answeredAt: Date | null;
@@ -46,24 +49,6 @@ type PracticeHistoryRow = {
   metadata: Record<string, unknown> | null;
   lexemeLemma: string | null;
   lexemeMetadata: Record<string, unknown> | null;
-};
-
-type UserPracticeHistoryRow = {
-  id: number;
-  taskId: string;
-  lexemeId: string;
-  lemma: string;
-  lexemeLemma: string | null;
-  lexemeMetadata: Record<string, unknown> | null;
-  pos: string;
-  taskType: string;
-  renderer: string;
-  result: PracticeResult;
-  submittedAnswer: string;
-  correctAnswer: string;
-  responseMs: number;
-  submittedAt: Date;
-  cefrLevel: string | null;
 };
 
 function toStringList(value: unknown): string[] {
@@ -128,12 +113,12 @@ function buildLexemeSnapshotFromRow(
 
 function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
   const metadata = isRecord(row.metadata) ? row.metadata : {};
-  const submittedResponse = metadata.submittedResponse ?? null;
-  const expectedResponse = metadata.expectedResponse ?? null;
+  const submittedResponse = row.submittedAnswer ?? (metadata.submittedResponse as string | null) ?? null;
+  const expectedResponse = row.correctAnswer ?? (metadata.expectedResponse as string | null) ?? null;
   const lexemeSnapshot = buildLexemeSnapshotFromRow(row);
   const answeredAt = row.answeredAt ?? row.submittedAt;
   const promptSummary = normaliseString(metadata.promptSummary)
-    ?? `${lexemeSnapshot.lemma} – ${row.taskType.replace(/[_-]+/g, " ")}`;
+    ?? `${row.lemma ?? lexemeSnapshot.lemma} – ${row.taskType.replace(/[_-]+/g, " ")}`;
   const attemptedAnswer = normaliseString(submittedResponse);
   const correctAnswer = normaliseString(expectedResponse);
   const cefrLevel = normaliseCefrLevel(row.cefrLevel ?? lexemeSnapshot.level);
@@ -163,83 +148,6 @@ function toAnswerHistoryItem(row: PracticeHistoryRow): TaskAnswerHistoryItem {
     verb: undefined,
     legacyVerb: undefined,
   } satisfies TaskAnswerHistoryItem;
-}
-
-function toUserPracticeHistoryItem(row: UserPracticeHistoryRow): TaskAnswerHistoryItem {
-  const lexemeSnapshot = buildLexemeSnapshotFromRow(row);
-  const cefrLevel = normaliseCefrLevel(row.cefrLevel ?? lexemeSnapshot.level);
-  const promptSummary = `${row.lemma} - ${row.taskType.replace(/[_-]+/g, " ")}`;
-
-  return {
-    id: `practice_history_fallback:${row.id}`,
-    taskId: row.taskId,
-    lexemeId: row.lexemeId,
-    taskType: row.taskType as TaskType,
-    pos: row.pos as LexemePos,
-    renderer: row.renderer,
-    result: row.result,
-    submittedResponse: row.submittedAnswer,
-    expectedResponse: row.correctAnswer,
-    promptSummary,
-    answeredAt: row.submittedAt.toISOString(),
-    timeSpentMs: row.responseMs,
-    timeSpent: row.responseMs,
-    cefrLevel,
-    mode: undefined,
-    attemptedAnswer: row.submittedAnswer,
-    correctAnswer: row.correctAnswer,
-    prompt: promptSummary,
-    level: cefrLevel,
-    collections: lexemeSnapshot.collections,
-    lexeme: lexemeSnapshot,
-    verb: undefined,
-    legacyVerb: undefined,
-  } satisfies TaskAnswerHistoryItem;
-}
-
-async function fetchMobileHistoryFallback(
-  userId: string,
-  options: {
-    result?: PracticeResult;
-    level?: string;
-    limit: number;
-  },
-): Promise<TaskAnswerHistoryItem[]> {
-  const mobileFilters: SQL[] = [eq(userPracticeHistory.userId, userId)];
-
-  if (options.result) {
-    mobileFilters.push(eq(userPracticeHistory.result, options.result));
-  }
-
-  if (options.level) {
-    mobileFilters.push(eq(userPracticeHistory.cefrLevel, options.level));
-  }
-
-  const rows = await db
-    .select({
-      id: userPracticeHistory.id,
-      taskId: userPracticeHistory.taskId,
-      lexemeId: userPracticeHistory.lexemeId,
-      lemma: userPracticeHistory.lemma,
-      lexemeLemma: lexemes.lemma,
-      lexemeMetadata: lexemes.metadata,
-      pos: userPracticeHistory.pos,
-      taskType: userPracticeHistory.taskType,
-      renderer: userPracticeHistory.renderer,
-      result: userPracticeHistory.result,
-      submittedAnswer: userPracticeHistory.submittedAnswer,
-      correctAnswer: userPracticeHistory.correctAnswer,
-      responseMs: userPracticeHistory.responseMs,
-      submittedAt: userPracticeHistory.submittedAt,
-      cefrLevel: userPracticeHistory.cefrLevel,
-    })
-    .from(userPracticeHistory)
-    .innerJoin(lexemes, eq(userPracticeHistory.lexemeId, lexemes.id))
-    .where(and(...mobileFilters))
-    .orderBy(desc(userPracticeHistory.submittedAt), desc(userPracticeHistory.id))
-    .limit(options.limit);
-
-  return rows.map((row) => toUserPracticeHistoryItem(row as UserPracticeHistoryRow));
 }
 
 export function createPracticeHistoryRouter(): Router {
@@ -283,10 +191,13 @@ export function createPracticeHistoryRouter(): Router {
           id: practiceHistory.id,
           taskId: practiceHistory.taskId,
           lexemeId: practiceHistory.lexemeId,
+          lemma: practiceHistory.lemma,
           pos: practiceHistory.pos,
           taskType: practiceHistory.taskType,
           renderer: practiceHistory.renderer,
           result: practiceHistory.result,
+          submittedAnswer: practiceHistory.submittedAnswer,
+          correctAnswer: practiceHistory.correctAnswer,
           responseMs: practiceHistory.responseMs,
           submittedAt: practiceHistory.submittedAt,
           answeredAt: practiceHistory.answeredAt,
@@ -325,16 +236,6 @@ export function createPracticeHistoryRouter(): Router {
         .limit(limit);
 
       const history = rows.map((row) => toAnswerHistoryItem(row as PracticeHistoryRow));
-      if (history.length === 0 && sessionUserId) {
-        const fallbackHistory = await fetchMobileHistoryFallback(sessionUserId, {
-          result,
-          level,
-          limit,
-        });
-        res.setHeader("Cache-Control", "no-store");
-        return res.json({ history: fallbackHistory });
-      }
-
       res.setHeader("Cache-Control", "no-store");
       res.json({ history });
     } catch (error) {

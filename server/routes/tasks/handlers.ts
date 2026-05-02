@@ -511,12 +511,17 @@ export function createSubmitTaskHandler(): RequestHandler {
       const practiceHistoryValues = {
         taskId: resolvedTaskId,
         lexemeId: taskRow.lexemeId!,
+        lemma: taskRow.lexemeLemma ?? taskRow.lexemeId!,
         pos: normalizedTaskPos,
         taskType: taskRow.taskType!,
         renderer: taskRow.renderer!,
         deviceId: payload.deviceId,
         userId: sessionUserId,
         result: persistedResult,
+        submittedAnswer: serialiseHistoryAnswer(payload.submittedResponse ?? payload.answer),
+        correctAnswer: serialiseHistoryAnswer(
+          payload.expectedResponse ?? expectedForm ?? taskRow.solution,
+        ),
         responseMs,
         submittedAt: attemptTimestamp,
         answeredAt: answeredAt ?? submittedAt ?? null,
@@ -532,26 +537,6 @@ export function createSubmitTaskHandler(): RequestHandler {
           legacyVerb: payload.legacyVerb ?? null,
         },
       };
-
-      if (sessionUserId) {
-        await db.insert(userPracticeHistory).values({
-          userId: sessionUserId,
-          taskId: resolvedTaskId,
-          lexemeId: taskRow.lexemeId!,
-          lemma: taskRow.lexemeLemma ?? taskRow.lexemeId!,
-          pos: normalizedTaskPos,
-          taskType: taskRow.taskType!,
-          renderer: taskRow.renderer!,
-          deviceId: payload.deviceId,
-          result: persistedResult,
-          submittedAnswer: serialiseHistoryAnswer(payload.submittedResponse ?? payload.answer),
-          correctAnswer: serialiseHistoryAnswer(payload.expectedResponse ?? expectedForm ?? taskRow.solution),
-          responseMs,
-          cefrLevel: resolvedCefrLevel,
-          hintsUsed: payload.hintsUsed ?? false,
-          submittedAt: attemptTimestamp,
-        });
-      }
 
       await db.insert(practiceHistory).values(practiceHistoryValues);
 

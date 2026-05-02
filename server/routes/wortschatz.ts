@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { asc, count, eq, like, or, sql } from 'drizzle-orm';
 
-import { db, lexemes, practiceHistory, userPracticeHistory, words } from '@db';
+import { db, lexemes, practiceHistory, words } from '@db';
 import type { PartOfSpeech, WortschatzWord } from '@shared';
 import { ANDROID_B2_BERUF_SOURCE, ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
 import { getSessionUserId, sendError } from './shared.js';
@@ -36,7 +36,7 @@ function createDelimitedSourceFilter(source: string) {
   );
 }
 
-function mapHistoryPosToWordPosSql(column: typeof userPracticeHistory.pos | typeof lexemes.pos) {
+function mapHistoryPosToWordPosSql(column: any) {
   return sql`case lower(${column})
     when 'v' then 'V'
     when 'verb' then 'V'
@@ -172,36 +172,25 @@ export function createWortschatzRouter(): Router {
 
     try {
       const sourceFilter = createDelimitedSourceFilter(ANDROID_B2_BERUF_SOURCE);
-      const rows = sessionUserId
-        ? await db
-            .select({
-              wordId: words.id,
-              result: userPracticeHistory.result,
-              count: count(),
-            })
-            .from(userPracticeHistory)
-            .innerJoin(
-              words,
-              sql`lower(${words.lemma}) = lower(${userPracticeHistory.lemma})
-                AND ${words.pos} = ${mapHistoryPosToWordPosSql(userPracticeHistory.pos)}`,
-            )
-            .where(sql`${userPracticeHistory.userId} = ${sessionUserId} AND ${sourceFilter}`)
-            .groupBy(words.id, userPracticeHistory.result)
-        : await db
-            .select({
-              wordId: words.id,
-              result: practiceHistory.result,
-              count: count(),
-            })
-            .from(practiceHistory)
-            .innerJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
-            .innerJoin(
-              words,
-              sql`lower(${words.lemma}) = lower(${lexemes.lemma})
-                AND ${words.pos} = ${mapHistoryPosToWordPosSql(lexemes.pos)}`,
-            )
-            .where(sql`${practiceHistory.deviceId} = ${deviceId} AND ${sourceFilter}`)
-            .groupBy(words.id, practiceHistory.result);
+      const identityFilter = sessionUserId
+        ? eq(practiceHistory.userId, sessionUserId)
+        : eq(practiceHistory.deviceId, deviceId!);
+
+      const rows = await db
+        .select({
+          wordId: words.id,
+          result: practiceHistory.result,
+          count: count(),
+        })
+        .from(practiceHistory)
+        .innerJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
+        .innerJoin(
+          words,
+          sql`lower(${words.lemma}) = lower(coalesce(${practiceHistory.lemma}, ${lexemes.lemma}))
+            AND ${words.pos} = ${mapHistoryPosToWordPosSql(practiceHistory.pos)}`,
+        )
+        .where(sql`${identityFilter} AND ${sourceFilter}`)
+        .groupBy(words.id, practiceHistory.result);
 
       res.setHeader('Cache-Control', 'no-store');
       res.json(buildHistorySummary(rows as WortschatzHistorySummaryRow[]));

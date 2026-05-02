@@ -313,6 +313,22 @@ export function createMockPool(): Pool {
   });
   mem.public.registerFunction({
     name: 'jsonb_build_object',
+    args: ['text', 'text', 'text', 'text', 'text', 'text'],
+    returns: 'jsonb',
+    allowNullArguments: true,
+    implementation: (...values: unknown[]) => {
+      const object: Record<string, unknown> = {};
+      for (let index = 0; index < values.length; index += 2) {
+        const key = values[index];
+        if (typeof key === 'string') {
+          object[key] = values[index + 1] ?? null;
+        }
+      }
+      return object;
+    },
+  });
+  mem.public.registerFunction({
+    name: 'jsonb_build_object',
     args: [
       'text',
       'text',

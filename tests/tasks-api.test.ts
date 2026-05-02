@@ -434,6 +434,7 @@ describe('tasks API', () => {
         renderer: task.renderer,
         deviceId: 'device-123',
         result: 'correct',
+        answer: 'correct-answer',
         timeSpentMs: 1500,
         answeredAt: new Date('2025-01-01T12:00:00.000Z').toISOString(),
       },
@@ -447,7 +448,7 @@ describe('tasks API', () => {
     expect(submissionBody.queueCap).toBeGreaterThan(0);
 
     const historyResult = await dbContext.pool.query(
-      'select task_id, device_id, result, pos, task_type, hints_used, metadata from practice_history where task_id = $1',
+      'select task_id, device_id, result, pos, task_type, hints_used, submitted_answer, correct_answer, metadata from practice_history where task_id = $1',
       [task.taskId],
     );
 
@@ -457,16 +458,10 @@ describe('tasks API', () => {
     expect(historyResult.rows[0]!.pos).toBe(task.pos);
     expect(historyResult.rows[0]!.task_type).toBe(task.taskType);
     expect(historyResult.rows[0]!.hints_used).toBe(false);
+    expect(historyResult.rows[0]!.submitted_answer).toBe('correct-answer');
     expect(historyResult.rows[0]!.metadata).toMatchObject({
       queueCap: submissionBody.queueCap,
     });
-
-    const mobileHistoryResult = await dbContext.pool.query(
-      'select count(*)::int as count from user_practice_history where task_id = $1',
-      [task.taskId],
-    );
-
-    expect(mobileHistoryResult.rows[0]!.count).toBe(0);
 
     const logResult = await dbContext.pool.query(
       'select task_id, device_id, user_id, cefr_level, attempted_at from practice_log where task_id = $1 and device_id = $2',
@@ -479,7 +474,7 @@ describe('tasks API', () => {
     expect(new Date(logResult.rows[0]!.attempted_at).getTime()).toBeGreaterThan(0);
   });
 
-  it('records authenticated submissions in mobile-compatible and web history tables', async () => {
+  it('records authenticated submissions in the consolidated history table', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -519,16 +514,16 @@ describe('tasks API', () => {
 
     expect(submission.status).toBe(200);
 
-    const mobileHistory = await dbContext.pool.query(
+    const history = await dbContext.pool.query(
       [
-        'select user_id, task_id, device_id, result, submitted_answer, correct_answer, response_ms, cefr_level, hints_used',
-        'from user_practice_history where user_id = $1 and task_id = $2',
+        'select user_id, task_id, device_id, result, submitted_answer, correct_answer, response_ms, cefr_level, hints_used, metadata',
+        'from practice_history where user_id = $1 and task_id = $2',
       ].join(' '),
       [userId, task.taskId],
     );
 
-    expect(mobileHistory.rowCount).toBe(1);
-    expect(mobileHistory.rows[0]).toMatchObject({
+    expect(history.rowCount).toBe(1);
+    expect(history.rows[0]).toMatchObject({
       user_id: userId,
       task_id: task.taskId,
       device_id: deviceId,
@@ -539,33 +534,14 @@ describe('tasks API', () => {
       cefr_level: 'A1',
       hints_used: true,
     });
-
-    const webHistory = await dbContext.pool.query(
-      [
-        'select user_id, task_id, device_id, result, response_ms, cefr_level, hints_used, metadata',
-        'from practice_history where user_id = $1 and task_id = $2',
-      ].join(' '),
-      [userId, task.taskId],
-    );
-
-    expect(webHistory.rowCount).toBe(1);
-    expect(webHistory.rows[0]).toMatchObject({
-      user_id: userId,
-      task_id: task.taskId,
-      device_id: deviceId,
-      result: 'incorrect',
-      response_ms: 1800,
-      cefr_level: 'A1',
-      hints_used: true,
-    });
-    expect(webHistory.rows[0]!.metadata).toMatchObject({
+    expect(history.rows[0]!.metadata).toMatchObject({
       submittedResponse: 'gehte',
       expectedResponse: 'ging',
       promptSummary: 'gehen - past tense',
     });
   });
 
-  it('reads signed-in answer history from canonical practice_history before mobile-compatible history', async () => {
+  it('reads signed-in answer history from the consolidated practice_history table', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -602,22 +578,12 @@ describe('tasks API', () => {
 
     expect(submission.status).toBe(200);
 
-    await dbContext.pool.query(
-      [
-        'update user_practice_history',
-        'set submitted_answer = $1, correct_answer = $2',
-        'where user_id = $3 and task_id = $4',
-      ].join(' '),
-      ['stale mobile answer', 'stale mobile expected', userId, task.taskId],
-    );
-
     const historyResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=10`);
     expect(historyResponse.status).toBe(200);
     const history = ((historyResponse.bodyJson as any).history ?? []) as any[];
 
     expect(history).toHaveLength(1);
     expect(history[0].id).toMatch(/^practice_history:/);
-    expect(history[0].id).not.toMatch(/^user_practice_history:/);
     expect(history[0].submittedResponse).toBe('canonical answer');
     expect(history[0].expectedResponse).toBe('expected answer');
     expect(history[0].promptSummary).toBe('canonical prompt');
@@ -762,9 +728,8 @@ describe('tasks API', () => {
 
     const canonicalRows = await dbContext.pool.query(
       [
-        'select ph.task_id, ph.lexeme_id, uph.task_id as bridge_task_id, uph.lexeme_id as bridge_lexeme_id',
+        'select ph.task_id, ph.lexeme_id',
         'from practice_history ph',
-        'inner join user_practice_history uph on uph.task_id = ph.task_id',
         'where ph.user_id = $1 and ph.device_id = $2',
       ].join(' '),
       [userId, deviceId],
@@ -774,8 +739,6 @@ describe('tasks API', () => {
     expect(canonicalRows.rows[0]!.task_id).toBe(submissionBody.taskId);
     expect(canonicalRows.rows[0]!.task_id).not.toMatch(/^word_/);
     expect(canonicalRows.rows[0]!.lexeme_id).not.toMatch(/^word_/);
-    expect(canonicalRows.rows[0]!.bridge_task_id).toBe(canonicalRows.rows[0]!.task_id);
-    expect(canonicalRows.rows[0]!.bridge_lexeme_id).toBe(canonicalRows.rows[0]!.lexeme_id);
 
     const leakedLegacyIds = await dbContext.pool.query(
       [
@@ -818,11 +781,6 @@ describe('tasks API', () => {
     });
 
     expect(submission.status).toBe(200);
-
-    await dbContext.pool.query(
-      'update user_practice_history set cefr_level = null where user_id = $1 and device_id = $2',
-      [userId, deviceId],
-    );
 
     const historyResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=10`);
     expect(historyResponse.status).toBe(200);
