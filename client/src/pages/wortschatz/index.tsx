@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, Filter, RotateCcw, Search, Volume2, X } from 'lucide-react';
 
 import { useAuthSession } from '@/auth/session';
@@ -34,6 +34,9 @@ import {
   WORTSCHATZ_HISTORY_SUMMARY_QUERY_KEY,
   WORTSCHATZ_QUERY_KEY,
 } from '@/lib/wortschatz';
+import { submitPracticeAttempt } from '@/lib/api';
+import { appendAnswer } from '@/lib/answer-history';
+import { useAnswerHistoryPersistence } from '@/pages/home/hooks/use-answer-history-persistence';
 import {
   ALL_WORTSCHATZ_LEVELS,
   ALL_WORTSCHATZ_POS,
@@ -45,10 +48,13 @@ import {
 } from '@/lib/wortschatz-storage';
 import { cn, speak } from '@/lib/utils';
 import { useFeatureCapabilities } from '@/lib/features';
-import type { PartOfSpeech, WortschatzWord } from '@shared';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
+import { mapLegacyPartOfSpeechToLexeme } from '@shared/pos-normalizer';
+import type { CEFRLevel, PartOfSpeech, PracticeResult, TaskAnswerHistoryItem, WortschatzWord } from '@shared';
 
 const B2_EXAM_DATE = new Date(2026, 3, 30);
 const TEXT_SELECTION_DRAG_THRESHOLD_PX = 8;
+const WORTSCHATZ_DRILL_RENDERER = 'word_card' as const;
 
 const WORTSCHATZ_IDS = {
   page: 'wortschatz-page',
@@ -167,6 +173,68 @@ function formatWordHeading(word: WortschatzWord): string {
   return word.pos === 'N' && word.gender ? `${word.gender} ${word.lemma}` : word.lemma;
 }
 
+function normaliseWortschatzLevel(level: string | null): CEFRLevel | undefined {
+  if (level === 'B2 Beruf') {
+    return 'B2';
+  }
+  return level === 'A1' || level === 'A2' || level === 'B1' || level === 'B2' || level === 'C1' || level === 'C2'
+    ? level
+    : undefined;
+}
+
+function createWortschatzHistoryEntry(options: {
+  word: WortschatzWord;
+  result: PracticeResult;
+  answeredAt: string;
+  timeSpentMs: number;
+  promptSummary: string;
+}): TaskAnswerHistoryItem | null {
+  const pos = mapLegacyPartOfSpeechToLexeme(options.word.pos);
+  if (!pos) {
+    return null;
+  }
+
+  const level = normaliseWortschatzLevel(options.word.level);
+  const wordRef = `word_${options.word.id}`;
+  const collections = [B2_BERUF_COLLECTION];
+
+  return {
+    id: `${wordRef}:${options.answeredAt}`,
+    taskId: wordRef,
+    lexemeId: wordRef,
+    taskType: 'vocabulary_drill',
+    pos,
+    renderer: WORTSCHATZ_DRILL_RENDERER,
+    result: options.result,
+    submittedResponse: options.word.lemma,
+    expectedResponse: options.word.english ?? '',
+    promptSummary: options.promptSummary,
+    answeredAt: options.answeredAt,
+    timeSpentMs: options.timeSpentMs,
+    timeSpent: options.timeSpentMs,
+    cefrLevel: level,
+    attemptedAnswer: options.word.lemma,
+    correctAnswer: options.word.english ?? undefined,
+    prompt: options.promptSummary,
+    level,
+    collections,
+    lexeme: {
+      id: wordRef,
+      lemma: options.word.lemma,
+      pos,
+      level,
+      collections,
+      english: options.word.english ?? undefined,
+      example:
+        options.word.exampleDe || options.word.exampleEn
+          ? { de: options.word.exampleDe ?? undefined, en: options.word.exampleEn ?? undefined }
+          : undefined,
+    },
+    verb: undefined,
+    legacyVerb: undefined,
+  } satisfies TaskAnswerHistoryItem;
+}
+
 function groupWordsByPos(words: WortschatzWord[]) {
   const grouped = new Map<PartOfSpeech, WortschatzWord[]>();
 
@@ -185,6 +253,7 @@ function toggleListValue<T>(current: T[], value: T): T[] {
 
 export default function WortschatzPage() {
   const authSession = useAuthSession();
+  const queryClient = useQueryClient();
   const translations = useTranslations();
   const copy = translations.wortschatz;
   const isMobile = useIsMobile();
@@ -195,6 +264,8 @@ export default function WortschatzPage() {
   );
   const [storageState, setStorageState] = useState(() => loadWortschatzState());
   const [isAnswerVisible, setIsAnswerVisible] = useState(false);
+  const { setAnswerHistory } = useAnswerHistoryPersistence();
+  const drillStartedAtRef = useRef(Date.now());
   const cardPointerStartRef = useRef<{ x: number; y: number } | null>(null);
   const cardPointerMovedRef = useRef(false);
 
@@ -317,6 +388,7 @@ export default function WortschatzPage() {
 
   useEffect(() => {
     setIsAnswerVisible(false);
+    drillStartedAtRef.current = Date.now();
   }, [currentWordId, storageState.activeTab]);
 
   const sidebar = (
@@ -465,10 +537,23 @@ export default function WortschatzPage() {
     setIsAnswerVisible(false);
   };
 
-  const handleDrillResult = (result: 'correct' | 'incorrect') => {
+  const handleDrillResult = (result: PracticeResult) => {
     if (!currentWord) {
       return;
     }
+
+    const pos = mapLegacyPartOfSpeechToLexeme(currentWord.pos);
+    const answeredAt = new Date().toISOString();
+    const timeSpentMs = Math.max(0, Date.now() - drillStartedAtRef.current);
+    const level = normaliseWortschatzLevel(currentWord.level);
+    const promptSummary = `${currentWord.lemma} - Wortschatz drill`;
+    const localHistoryEntry = createWortschatzHistoryEntry({
+      word: currentWord,
+      result,
+      answeredAt,
+      timeSpentMs,
+      promptSummary,
+    });
 
     setStorageState((previous) => {
       const nextMastery =
@@ -484,6 +569,40 @@ export default function WortschatzPage() {
         drillIndex: Math.min(previous.drillIndex + 1, previous.drillOrder.length),
       };
     });
+
+    if (localHistoryEntry) {
+      setAnswerHistory((previous) => appendAnswer(localHistoryEntry, previous));
+    }
+
+    if (!pos) {
+      return;
+    }
+
+    const wordRef = `word_${currentWord.id}`;
+    void submitPracticeAttempt({
+      taskId: wordRef,
+      lexemeId: wordRef,
+      taskType: 'vocabulary_drill',
+      pos,
+      renderer: WORTSCHATZ_DRILL_RENDERER,
+      result,
+      submittedResponse: currentWord.lemma,
+      expectedResponse: currentWord.english ?? '',
+      promptSummary,
+      timeSpentMs,
+      answeredAt,
+      cefrLevel: level,
+    })
+      .then(({ queued }) =>
+        queued
+          ? undefined
+          : queryClient.invalidateQueries({
+              queryKey: WORTSCHATZ_HISTORY_SUMMARY_QUERY_KEY,
+            }),
+      )
+      .catch((error) => {
+        console.warn('Failed to persist Wortschatz drill attempt', error);
+      });
   };
 
   const handleCardPointerDown = (event: PointerEvent<HTMLDivElement>) => {

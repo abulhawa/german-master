@@ -10,6 +10,8 @@ import type { WortschatzHistorySummary } from '@/lib/wortschatz';
 
 import { renderWortschatzPage, setupHomeNavigationTest } from './home-navigation/utils';
 
+const { submitPracticeAttempt } = await import('@/lib/api');
+
 const FIXTURE_WORDS: WortschatzWord[] = [
   {
     id: 1,
@@ -129,6 +131,7 @@ function setViewportWidth(width: number) {
 describe('Wortschatz page', () => {
   beforeEach(() => {
     setupHomeNavigationTest();
+    vi.mocked(submitPracticeAttempt).mockResolvedValue({ queued: false });
     setViewportWidth(1280);
     window.history.replaceState({}, '', '/wortschatz');
   });
@@ -227,6 +230,33 @@ describe('Wortschatz page', () => {
 
     await user.click(screen.getByRole('button', { name: 'Restart drill' }));
     expect(await screen.findByText('Tap to reveal')).toBeInTheDocument();
+  });
+
+  it('submits Schnell-Drill results to practice history using legacy word ids', async () => {
+    installWortschatzFetch([FIXTURE_WORDS[0]!]);
+    const user = userEvent.setup();
+
+    renderWortschatzPage();
+
+    await user.click(await screen.findByText('Tap to reveal'));
+    await user.click(screen.getByRole('button', { name: 'Correct' }));
+
+    await waitFor(() => {
+      expect(submitPracticeAttempt).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taskId: 'word_1',
+          lexemeId: 'word_1',
+          taskType: 'vocabulary_drill',
+          pos: 'noun',
+          renderer: 'word_card',
+          result: 'correct',
+          submittedResponse: 'Arbeitsvertrag',
+          expectedResponse: 'employment contract',
+          promptSummary: 'Arbeitsvertrag - Wortschatz drill',
+          cefrLevel: 'B2',
+        }),
+      );
+    });
   });
 
   it('shows historical database totals instead of local drill session counters', async () => {
