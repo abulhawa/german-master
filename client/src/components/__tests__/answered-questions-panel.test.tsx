@@ -14,10 +14,10 @@ function createB2BerufEntry(): AnsweredQuestion {
     lexemeId: "lexeme-b2-beruf",
     taskType: "vocabulary_drill",
     pos: "noun",
-    renderer: "vocabulary_drill",
+    renderer: "word_card",
     result: "correct",
-    submittedResponse: "Arbeitsvertrag",
-    expectedResponse: "employment contract",
+    submittedResponse: { selfAssessment: "known" },
+    expectedResponse: { answer: "Arbeitsvertrag", english: "employment contract" },
     promptSummary: "Arbeitsvertrag - vocabulary drill",
     answeredAt: "2026-04-28T08:00:00.000Z",
     timeSpentMs: 1000,
@@ -41,7 +41,11 @@ describe("AnsweredQuestionsPanel", () => {
     render(<AnsweredQuestionsPanel history={[createB2BerufEntry()]} />);
 
     expect(screen.getByRole("heading", { name: "Arbeitsvertrag" })).toBeInTheDocument();
-    expect(screen.getByText("Level B2 Beruf")).toBeInTheDocument();
+    expect(screen.getByText("Collection B2 Beruf")).toBeInTheDocument();
+    expect(screen.getByText("Level B2")).toBeInTheDocument();
+    expect(screen.getByText("Self-assessment")).toBeInTheDocument();
+    expect(screen.getAllByText("Known").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Level B2 Beruf")).not.toBeInTheDocument();
     expect(screen.queryByText("Level A1")).not.toBeInTheDocument();
   });
 });

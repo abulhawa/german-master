@@ -335,8 +335,16 @@ describe('tasks API', () => {
     expect(berufTasks.every((task) => task.taskType === 'vocabulary_drill')).toBe(true);
     expect(berufTasks.some((task) => task.lexeme?.lemma === 'Arbeitsvertrag')).toBe(true);
     for (const task of berufTasks) {
+      expect(task.renderer).toBe('word_card');
+      expect(task.interactionMode).toBe('self_grade');
+      expect(task.grading).toMatchObject({
+        type: 'self',
+        positive: expect.arrayContaining(['known']),
+        negative: expect.arrayContaining(['forgot']),
+      });
       expect(task.prompt?.cefrLevel).toBe('B2');
       expect(task.prompt?.collections).toContain(B2_BERUF_COLLECTION);
+      expect(task.reveal?.english).toEqual(expect.any(String));
       expect(task.lexeme?.metadata?.level).toBe('B2');
       expect(task.lexeme?.metadata?.collections).toContain(B2_BERUF_COLLECTION);
     }
@@ -720,8 +728,8 @@ describe('tasks API', () => {
         renderer: task.renderer,
         deviceId: 'web-vocab-device-1',
         result: 'correct',
-        submittedResponse: task.lexeme.lemma,
-        expectedResponse: task.solution?.english ?? 'employment contract',
+        submittedResponse: { selfAssessment: 'known' },
+        expectedResponse: task.solution,
         timeSpentMs: 700,
         cefrLevel: 'B2',
       },
@@ -732,7 +740,7 @@ describe('tasks API', () => {
 
     const history = await dbContext.pool.query(
       [
-        'select task_id, lexeme_id, task_type from practice_history',
+        'select task_id, lexeme_id, task_type, submitted_answer, correct_answer, metadata from practice_history',
         'where device_id = $1',
       ].join(' '),
       ['web-vocab-device-1'],
@@ -743,6 +751,12 @@ describe('tasks API', () => {
       task_id: task.taskId,
       lexeme_id: task.lexeme.id,
       task_type: 'vocabulary_drill',
+      submitted_answer: 'known',
+    });
+    expect(history.rows[0]!.correct_answer).toContain('employment contract');
+    expect(history.rows[0]!.metadata).toMatchObject({
+      submittedResponse: { selfAssessment: 'known' },
+      expectedResponse: task.solution,
     });
     expect(history.rows[0]!.task_id).not.toMatch(/^word_/);
     expect(history.rows[0]!.lexeme_id).not.toMatch(/^word_/);

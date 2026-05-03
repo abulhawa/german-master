@@ -272,6 +272,7 @@ export interface WortschatzMessages {
     title: string;
     description: string;
     all: string;
+    collectionTitle: string;
     levelTitle: string;
     posTitle: string;
     reset: string;
@@ -285,7 +286,8 @@ export interface WortschatzMessages {
     progressLabel: string;
     progressDetail: string;
   };
-  levelLabels: Record<'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2', string>;
+  collectionLabels: Record<'b2_beruf', string>;
+  levelLabels: Record<'A1' | 'A2' | 'B1' | 'B2', string>;
   posLabels: Record<PartOfSpeech, string>;
   list: {
     emptyTitle: string;
@@ -519,10 +521,11 @@ const MESSAGES: Record<Locale, AppMessages> = {
       },
       filters: {
         label: 'Filters',
-        title: 'Part-of-speech filters',
-        description: 'Limit the current list and drill queue to the word classes you want to review.',
+        title: 'Vocabulary filters',
+        description: 'Limit the current list and drill queue by collection, CEFR level, or word class.',
         all: 'All',
-        levelTitle: 'Level',
+        collectionTitle: 'Collection',
+        levelTitle: 'CEFR level',
         posTitle: 'Part of speech',
         reset: 'Reset filters',
       },
@@ -535,8 +538,10 @@ const MESSAGES: Record<Locale, AppMessages> = {
         progressLabel: 'Practice history progress',
         progressDetail: '{count} of {total} filtered words have historical practice attempts.',
       },
+      collectionLabels: {
+        b2_beruf: 'B2 Beruf',
+      },
       levelLabels: {
-        'B2 Beruf': 'B2 Beruf',
         A1: 'A1',
         A2: 'A2',
         B1: 'B1',
@@ -580,8 +585,8 @@ const MESSAGES: Record<Locale, AppMessages> = {
         hideAnswer: 'Hide answer',
         tapToReveal: 'Tap to reveal',
         backToQuestion: 'Back to question',
-        correct: 'Correct',
-        incorrect: 'Incorrect',
+        correct: 'Known',
+        incorrect: 'Review again',
         restart: 'Restart drill',
         pronunciationLabel: 'Pronounce',
         queueProgressLabel: 'Drill queue progress',
@@ -844,6 +849,7 @@ const MESSAGES: Record<Locale, AppMessages> = {
         conjugate_form: 'Conjugation',
         noun_case_declension: 'Noun declension',
         adj_ending: 'Adjective endings',
+        vocabulary_drill: 'Wortschatz',
       },
       cefrLevel: 'Level {level}',
       streak: {
@@ -980,10 +986,11 @@ const MESSAGES: Record<Locale, AppMessages> = {
       },
       filters: {
         label: 'Filter',
-        title: 'Filter nach Wortart',
-        description: 'Begrenze Liste und Drill-Warteschlange auf die Wortarten, die du gerade wiederholen möchtest.',
+        title: 'Wortschatzfilter',
+        description: 'Begrenze Liste und Drill-Warteschlange nach Sammlung, GER-Niveau oder Wortart.',
         all: 'Alle',
-        levelTitle: 'Niveau',
+        collectionTitle: 'Sammlung',
+        levelTitle: 'GER-Niveau',
         posTitle: 'Wortart',
         reset: 'Filter zurücksetzen',
       },
@@ -996,8 +1003,10 @@ const MESSAGES: Record<Locale, AppMessages> = {
         progressLabel: 'Fortschritt aus der Übungshistorie',
         progressDetail: '{count} von {total} gefilterten Wörtern haben historische Übungsversuche.',
       },
+      collectionLabels: {
+        b2_beruf: 'B2 Beruf',
+      },
       levelLabels: {
-        'B2 Beruf': 'B2 Beruf',
         A1: 'A1',
         A2: 'A2',
         B1: 'B1',
@@ -1041,8 +1050,8 @@ const MESSAGES: Record<Locale, AppMessages> = {
         hideAnswer: 'Antwort ausblenden',
         tapToReveal: 'Tippen zum Aufdecken',
         backToQuestion: 'Zurück zur Frage',
-        correct: 'Korrekt',
-        incorrect: 'Falsch',
+        correct: 'Gewusst',
+        incorrect: 'Wiederholen',
         restart: 'Drill neu starten',
         pronunciationLabel: 'Aussprechen',
         queueProgressLabel: 'Fortschritt der Drill-Warteschlange',
@@ -1305,6 +1314,7 @@ const MESSAGES: Record<Locale, AppMessages> = {
         conjugate_form: 'Konjugation',
         noun_case_declension: 'Nominaldeklination',
         adj_ending: 'Adjektivendungen',
+        vocabulary_drill: 'Wortschatz',
       },
       cefrLevel: 'Niveau {level}',
       streak: {

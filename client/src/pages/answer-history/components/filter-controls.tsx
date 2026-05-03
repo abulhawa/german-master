@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button";
 
 import type { LevelFilter, ResultFilter } from "../utils";
 
+function formatLevelOption(option: LevelFilter): string {
+  if (option === "all") {
+    return "All";
+  }
+  if (option === "B2 Beruf") {
+    return "B2 Beruf collection";
+  }
+  return option;
+}
+
 interface FilterControlsProps {
   sectionId?: string;
   levelOptions: LevelFilter[];
@@ -34,7 +44,7 @@ export function FilterControls({
       id={sectionId}
     >
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Filter by level</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Filter by level or collection</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {levelOptions.map((option) => (
             <Button
@@ -44,7 +54,7 @@ export function FilterControls({
               type="button"
               onClick={() => onLevelChange(option)}
             >
-              {option === "all" ? "All" : option}
+              {formatLevelOption(option)}
             </Button>
           ))}
         </div>

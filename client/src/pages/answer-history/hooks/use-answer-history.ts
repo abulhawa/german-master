@@ -126,7 +126,7 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
   const activeFilters = useMemo(() => {
     const filters: string[] = [];
     if (levelFilter !== "all") {
-      filters.push(`Level ${levelFilter}`);
+      filters.push(levelFilter === "B2 Beruf" ? "Collection B2 Beruf" : `Level ${levelFilter}`);
     }
     if (resultFilter !== "all") {
       filters.push(resultFilter === "correct" ? "Correct answers" : "Incorrect answers");

@@ -232,6 +232,76 @@ describe('fetchPracticeTasksByType', () => {
     expect(url.searchParams.getAll('collection')).toEqual(['b2_beruf']);
     expect(url.searchParams.getAll('level')).not.toContain('B2 Beruf');
   });
+
+  it('maps vocabulary drill tasks as self-graded flashcards', async () => {
+    const payload = {
+      tasks: [
+        {
+          taskId: 'vocab-task-1',
+          taskType: 'vocabulary_drill',
+          renderer: 'word_card',
+          interactionMode: 'self_grade',
+          grading: {
+            type: 'self',
+            positive: ['known', 'remembered'],
+            negative: ['forgot', 'not_known'],
+          },
+          pos: 'noun',
+          prompt: {
+            lemma: 'Arbeitsvertrag',
+            pos: 'noun',
+            cefrLevel: 'B2',
+            collections: ['b2_beruf'],
+            instructions: 'Review the meaning of "Arbeitsvertrag".',
+            example: {
+              de: 'Der Arbeitsvertrag regelt die Probezeit.',
+              en: 'The employment contract defines the probation period.',
+            },
+          },
+          reveal: {
+            english: 'employment contract',
+          },
+          solution: {
+            answer: 'Arbeitsvertrag',
+            english: 'employment contract',
+          },
+          queueCap: 50,
+          lexeme: {
+            id: 'lex-vocab-1',
+            lemma: 'Arbeitsvertrag',
+            metadata: { level: 'B2', collections: ['b2_beruf'] },
+          },
+        },
+      ],
+    } satisfies Record<string, unknown>;
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = requestToUrl(input);
+      if (url.includes('/api/tasks')) {
+        return new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`Unexpected request: ${input}`);
+    });
+
+    vi.stubGlobal('fetch', fetchMock);
+
+    const [task] = await fetchPracticeTasks({
+      taskTypes: ['vocabulary_drill'],
+      level: ['B2'],
+      collection: ['b2_beruf'],
+      limit: 1,
+    });
+
+    expect(task?.taskType).toBe('vocabulary_drill');
+    expect(task?.renderer).toBe('word_card');
+    expect(task?.interactionMode).toBe('self_grade');
+    expect(task?.grading).toMatchObject({ type: 'self' });
+    expect(task?.reveal?.english).toBe('employment contract');
+    expect(task?.expectedSolution?.english).toBe('employment contract');
+  });
 });
 
 describe('client task registry parity', () => {

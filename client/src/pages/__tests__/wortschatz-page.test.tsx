@@ -163,7 +163,7 @@ describe('Wortschatz page', () => {
     expect(navigationLinks.some((link) => link.getAttribute('aria-current') === 'page')).toBe(true);
   });
 
-  it('filters by level, part of speech, and the Alle level chip', async () => {
+  it('filters by collection, CEFR level, part of speech, and the All collection chip', async () => {
     installWortschatzFetch(FIXTURE_WORDS);
     const user = userEvent.setup();
 
@@ -217,14 +217,14 @@ describe('Wortschatz page', () => {
 
     await user.click(screen.getByText('Tap to reveal'));
     expect(await screen.findByRole('button', { name: 'Back to question' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Incorrect' }));
+    await user.click(screen.getByRole('button', { name: 'Review again' }));
 
     await waitFor(() => {
       expect(screen.getByText('Tap to reveal')).toBeInTheDocument();
     });
 
     await user.click(screen.getByText('Tap to reveal'));
-    await user.click(screen.getByRole('button', { name: 'Correct' }));
+    await user.click(screen.getByRole('button', { name: 'Known' }));
 
     expect(await screen.findByText('Drill complete')).toBeInTheDocument();
 
@@ -239,7 +239,7 @@ describe('Wortschatz page', () => {
     renderWortschatzPage();
 
     await user.click(await screen.findByText('Tap to reveal'));
-    await user.click(screen.getByRole('button', { name: 'Correct' }));
+    await user.click(screen.getByRole('button', { name: 'Known' }));
 
     await waitFor(() => {
       expect(submitPracticeAttempt).toHaveBeenCalledWith(
@@ -250,8 +250,8 @@ describe('Wortschatz page', () => {
           pos: 'noun',
           renderer: 'word_card',
           result: 'correct',
-          submittedResponse: 'Arbeitsvertrag',
-          expectedResponse: 'employment contract',
+          submittedResponse: { selfAssessment: 'known' },
+          expectedResponse: { answer: 'Arbeitsvertrag', english: 'employment contract' },
           promptSummary: 'Arbeitsvertrag - Wortschatz drill',
           cefrLevel: 'B2',
         }),
@@ -295,8 +295,8 @@ describe('Wortschatz page', () => {
     fireEvent.pointerUp(card, { clientX: 130 });
 
     expect(screen.queryByText('Drill complete')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Correct' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Incorrect' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Known' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review again' })).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith(expect.stringContaining('/api/submission'), expect.anything());
   });
 
@@ -308,7 +308,7 @@ describe('Wortschatz page', () => {
 
     await screen.findByText('Tap to reveal');
     await user.click(screen.getByText('Tap to reveal'));
-    await user.click(screen.getByRole('button', { name: 'Correct' }));
+    await user.click(screen.getByRole('button', { name: 'Known' }));
     await user.click(screen.getByRole('tab', { name: 'Wortliste' }));
     await user.type(screen.getByLabelText('Search vocabulary'), 'vertrag');
 
@@ -357,7 +357,8 @@ describe('Wortschatz page', () => {
     await user.click(screen.getByRole('button', { name: 'Filters' }));
 
     const sheet = await screen.findByRole('dialog');
-    expect(within(sheet).getByText('Level')).toBeInTheDocument();
+    expect(within(sheet).getByText('Collection')).toBeInTheDocument();
+    expect(within(sheet).getByText('CEFR level')).toBeInTheDocument();
     expect(within(sheet).getByRole('button', { name: 'B2 Beruf' })).toBeInTheDocument();
     expect(within(sheet).queryByRole('button', { name: 'C1' })).not.toBeInTheDocument();
     expect(within(sheet).queryByRole('button', { name: 'C2' })).not.toBeInTheDocument();

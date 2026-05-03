@@ -325,6 +325,8 @@ function buildVocabularyDrillTask(source: TaskTemplateSource): GeneratedTaskSpec
     hints: buildHints(source),
     metadata: {
       interaction: 'self_grade',
+      interactionMode: registryEntry.interactionMode,
+      grading: registryEntry.grading,
       ...(collections.length ? { collections } : {}),
       ...(canonicalLevel(source) ? { level: canonicalLevel(source) } : {}),
     },

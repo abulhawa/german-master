@@ -26,6 +26,10 @@ function resolveCollectionLabel(collections: readonly string[] | undefined): str
   return 'Vocabulary';
 }
 
+function selfAssessmentFromResult(result: PracticeResult): 'known' | 'forgot' {
+  return result === 'correct' ? 'known' : 'forgot';
+}
+
 export function VocabularyDrillRenderer({
   task,
   onResult,
@@ -84,7 +88,7 @@ export function VocabularyDrillRenderer({
       pos: task.pos,
       renderer: task.renderer,
       result,
-      submittedResponse: { selfAssessment: result },
+      submittedResponse: { selfAssessment: selfAssessmentFromResult(result) },
       expectedResponse: task.expectedSolution,
       promptSummary,
       timeSpentMs: submissionContext.timeSpentMs,

@@ -40,9 +40,9 @@ export const TASK_TYPE_COPY: Record<TaskType, TaskCopy> = {
     pos: 'verb',
   },
   vocabulary_drill: {
-    label: 'Vocabulary drill',
-    description: 'Review vocabulary with a self-graded word card.',
-    posLabel: 'Vocabulary',
+    label: 'Wortschatz',
+    description: 'Review vocabulary with a self-graded flashcard.',
+    posLabel: 'Wortschatz',
     pos: 'noun',
   },
 };
@@ -58,13 +58,13 @@ export function getTaskTypeLabel(taskType: TaskType): string {
 export function getProgressTaskTypeLabel(taskType: TaskType): string {
   switch (taskType) {
     case 'conjugate_form':
-      return 'verb_conjugation';
+      return 'Verb conjugation';
     case 'noun_case_declension':
-      return 'noun_case_declension';
+      return 'Noun declension';
     case 'adj_ending':
-      return 'adjective_declension';
+      return 'Adjective endings';
     case 'vocabulary_drill':
-      return 'vocabulary_drill';
+      return 'Wortschatz';
     case 'b2_writing_prompt':
       return 'B2 writing prompt';
     default:

@@ -3,6 +3,7 @@ import {
   taskTypeRegistry as sharedTaskRegistry,
   validateTaskAgainstRegistry,
   type LexemePos,
+  type TaskGrading,
   type TaskInteractionMode,
   type TaskRegistry,
   type TaskRegistryEntry,
@@ -23,7 +24,9 @@ export interface PracticeTask<T extends TaskType = TaskType> {
   pos: LexemePos;
   renderer: (typeof sharedTaskRegistry)[T]['renderer'];
   interactionMode: TaskInteractionMode;
+  grading?: TaskGrading;
   prompt: TaskPrompt<T>;
+  reveal?: Record<string, unknown>;
   expectedSolution?: TaskSolution<T>;
   queueCap: number;
   lexeme: {
@@ -48,13 +51,24 @@ export interface TaskFetchOptions {
   shuffleSeed?: string;
 }
 
+const rawTaskGradingSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('system') }),
+  z.object({
+    type: z.literal('self'),
+    positive: z.array(z.string()),
+    negative: z.array(z.string()),
+  }),
+]);
+
 const rawTaskSchema = z.object({
   taskId: z.string().min(1),
   taskType: z.string().min(1),
   renderer: z.string().min(1),
   interactionMode: z.enum(['choice', 'typed', 'self_grade', 'writing']).optional(),
+  grading: rawTaskGradingSchema.optional(),
   pos: z.string().min(1),
   prompt: z.unknown(),
+  reveal: z.record(z.string(), z.unknown()).optional(),
   solution: z.unknown().optional(),
   queueCap: z.number().int().positive(),
   lexeme: z.object({
@@ -89,7 +103,9 @@ function mapTaskPayload(task: RawTaskPayload): PracticeTask {
     pos: validation.pos,
     renderer: validation.renderer,
     interactionMode: task.interactionMode ?? registryEntry.interactionMode,
+    grading: task.grading ?? registryEntry.grading,
     prompt,
+    reveal: task.reveal,
     expectedSolution: solution,
     queueCap: task.queueCap,
     lexeme: {

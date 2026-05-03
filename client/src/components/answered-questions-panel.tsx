@@ -2,7 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PracticeMode } from "@/lib/types";
 import { getProgressTaskTypeLabel } from "@/lib/task-metadata";
-import { getAnswerHistoryDisplayLevel, type AnsweredQuestion } from "@/lib/answer-history";
+import {
+  getAnswerHistoryDisplayLevel,
+  getAnswerHistoryFilterLevels,
+  type AnsweredQuestion,
+} from "@/lib/answer-history";
 import type { AnswerHistoryLexemeSnapshot } from "@shared";
 import { derivePromptLemmaFromEntry } from "@/lib/prompt-lemma";
 import {
@@ -33,7 +37,37 @@ function deriveExpectedAnswer(expected: unknown): string | undefined {
   if (typeof record.value === "string") {
     return record.value;
   }
+  if (typeof record.english === "string") {
+    return record.english;
+  }
+  if (typeof record.answer === "string") {
+    return record.answer;
+  }
   return undefined;
+}
+
+function deriveSelfAssessment(response: unknown, result: AnsweredQuestion["result"]): string {
+  if (response && typeof response === "object") {
+    const record = response as Record<string, unknown>;
+    if (record.selfAssessment === "known" || record.selfAssessment === "remembered") {
+      return "Known";
+    }
+    if (record.selfAssessment === "forgot" || record.selfAssessment === "not_known") {
+      return "Needs review";
+    }
+  }
+
+  return result === "correct" ? "Known" : "Needs review";
+}
+
+function getCanonicalLevel(item: AnsweredQuestion): string | null {
+  for (const level of [item.level, item.cefrLevel, item.lexeme?.level]) {
+    if (typeof level === "string" && /^(A1|A2|B1|B2|C1|C2)$/i.test(level)) {
+      return level.toUpperCase();
+    }
+  }
+
+  return null;
 }
 
 const formatDuration = (milliseconds: number) => {
@@ -119,9 +153,13 @@ export function AnsweredQuestionsPanel({
                   } satisfies AnswerHistoryLexemeSnapshot)
                 : undefined);
             const mode = item.mode ?? item.legacyVerb?.mode;
-            const level = getAnswerHistoryDisplayLevel(item);
+            const isVocabularySelfAssessment = item.taskType === "vocabulary_drill";
+            const isB2BerufCollection = getAnswerHistoryFilterLevels(item).includes("B2 Beruf");
+            const level = getCanonicalLevel(item) ?? getAnswerHistoryDisplayLevel(item);
             const prompt = item.prompt ?? item.promptSummary;
-            const attempted = item.attemptedAnswer ?? (typeof item.submittedResponse === "string" ? item.submittedResponse : "");
+            const attempted = isVocabularySelfAssessment
+              ? deriveSelfAssessment(item.submittedResponse, item.result)
+              : item.attemptedAnswer ?? (typeof item.submittedResponse === "string" ? item.submittedResponse : "");
             const promptLemma = derivePromptLemmaFromEntry(item);
             const expected =
               item.result === "correct"
@@ -160,11 +198,18 @@ export function AnsweredQuestionsPanel({
                           : "border-warning-border bg-warning text-warning-foreground",
                       )}
                     >
-                      {item.result === "correct" ? "Correct" : "Incorrect"}
+                      {isVocabularySelfAssessment
+                        ? deriveSelfAssessment(item.submittedResponse, item.result)
+                        : item.result === "correct"
+                          ? "Correct"
+                          : "Incorrect"}
                     </Badge>
                     <span className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                       {mode ? MODE_LABELS[mode] ?? mode : getProgressTaskTypeLabel(item.taskType)}
                     </span>
+                    {isB2BerufCollection ? (
+                      <span className="text-xs text-muted-foreground">Collection B2 Beruf</span>
+                    ) : null}
                     <span className="text-xs text-muted-foreground">Level {level}</span>
                     <span className="text-xs text-muted-foreground">
                       {answeredDateLabel && answeredTime
@@ -187,7 +232,9 @@ export function AnsweredQuestionsPanel({
                   </div>
                   {attempted && (
                     <div className="flex flex-wrap gap-2">
-                      <dt className="font-semibold text-foreground">Your answer</dt>
+                      <dt className="font-semibold text-foreground">
+                        {isVocabularySelfAssessment ? "Self-assessment" : "Your answer"}
+                      </dt>
                       <dd className="text-muted-foreground">{attempted}</dd>
                     </div>
                   )}

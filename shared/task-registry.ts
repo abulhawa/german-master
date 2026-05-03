@@ -122,12 +122,20 @@ export type LexemePos =
   | 'interjection';
 
 export type TaskInteractionMode = 'choice' | 'typed' | 'self_grade' | 'writing';
+export type TaskGrading =
+  | { readonly type: 'system' }
+  | {
+      readonly type: 'self';
+      readonly positive: readonly string[];
+      readonly negative: readonly string[];
+    };
 
 interface TaskRegistryEntryBase {
   readonly taskType: string;
   readonly supportedPos: ReadonlyArray<LexemePos>;
   readonly renderer: string;
   readonly interactionMode: TaskInteractionMode;
+  readonly grading: TaskGrading;
   readonly promptSchema: z.ZodTypeAny;
   readonly solutionSchema: z.ZodTypeAny;
   readonly defaultQueueCap: number;
@@ -139,6 +147,7 @@ export const taskTypeRegistry = {
     supportedPos: ['verb'],
     renderer: 'conjugate_form',
     interactionMode: 'typed',
+    grading: { type: 'system' },
     promptSchema: conjugatePromptSchema,
     solutionSchema: conjugateSolutionSchema,
     defaultQueueCap: 30,
@@ -148,6 +157,7 @@ export const taskTypeRegistry = {
     supportedPos: ['noun'],
     renderer: 'noun_case_declension',
     interactionMode: 'typed',
+    grading: { type: 'system' },
     promptSchema: nounDeclensionPromptSchema,
     solutionSchema: nounDeclensionSolutionSchema,
     defaultQueueCap: 25,
@@ -157,6 +167,7 @@ export const taskTypeRegistry = {
     supportedPos: ['adjective'],
     renderer: 'adj_ending',
     interactionMode: 'typed',
+    grading: { type: 'system' },
     promptSchema: adjectiveEndingPromptSchema,
     solutionSchema: adjectiveEndingSolutionSchema,
     defaultQueueCap: 20,
@@ -166,6 +177,7 @@ export const taskTypeRegistry = {
     supportedPos: ['verb', 'adjective', 'noun'],
     renderer: 'b2_writing_prompt',
     interactionMode: 'writing',
+    grading: { type: 'system' },
     promptSchema: b2WritingPromptSchema,
     solutionSchema: b2WritingSolutionSchema,
     defaultQueueCap: 3,
@@ -187,6 +199,11 @@ export const taskTypeRegistry = {
     ],
     renderer: 'word_card',
     interactionMode: 'self_grade',
+    grading: {
+      type: 'self',
+      positive: ['known', 'remembered'],
+      negative: ['forgot', 'not_known'],
+    },
     promptSchema: vocabularyDrillPromptSchema,
     solutionSchema: vocabularyDrillSolutionSchema,
     defaultQueueCap: 50,

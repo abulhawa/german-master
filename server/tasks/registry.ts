@@ -7,7 +7,7 @@ import {
 export type ServerTaskRegistryEntry = TaskRegistryEntry & {
   queueCap: number;
   evaluation: {
-    strategy: 'string-equality';
+    strategy: 'string-equality' | 'self-assessment';
     normalise: boolean;
   };
 };
@@ -49,8 +49,8 @@ export const taskRegistry: Record<TaskType, ServerTaskRegistryEntry> = {
     ...sharedRegistry.vocabulary_drill,
     queueCap: 50,
     evaluation: {
-      strategy: 'string-equality',
-      normalise: true,
+      strategy: 'self-assessment',
+      normalise: false,
     },
   },
 };

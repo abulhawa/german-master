@@ -187,6 +187,42 @@ function createB2WritingTask(): PracticeTask<'b2_writing_prompt'> {
   } satisfies PracticeTask<'b2_writing_prompt'>;
 }
 
+function createVocabularyTask(): PracticeTask<'vocabulary_drill'> {
+  const registry = clientTaskRegistry.vocabulary_drill;
+  return {
+    taskId: 'vocab-task-1',
+    lexemeId: 'lex-vocab-1',
+    taskType: 'vocabulary_drill',
+    pos: 'noun',
+    renderer: registry.renderer,
+    interactionMode: registry.interactionMode,
+    grading: registry.grading,
+    prompt: {
+      lemma: 'Arbeitsvertrag',
+      pos: 'noun',
+      cefrLevel: 'B2',
+      collections: ['b2_beruf'],
+      instructions: 'Review the meaning of "Arbeitsvertrag".',
+      example: {
+        de: 'Der Arbeitsvertrag ist unterschrieben.',
+        en: 'The employment contract is signed.',
+      },
+    },
+    reveal: {
+      english: 'employment contract',
+    },
+    expectedSolution: { answer: 'Arbeitsvertrag', english: 'employment contract' },
+    queueCap: registry.defaultQueueCap,
+    lexeme: {
+      id: 'lex-vocab-1',
+      lemma: 'Arbeitsvertrag',
+      metadata: { level: 'B2', collections: ['b2_beruf'] },
+    },
+    assignedAt: new Date('2024-01-01T00:00:00.000Z').toISOString(),
+    source: 'seed',
+  } satisfies PracticeTask<'vocabulary_drill'>;
+}
+
 function getDefaultSettings(): PracticeSettingsState {
   return createDefaultSettings();
 }
@@ -475,6 +511,38 @@ describe('PracticeCard', () => {
     expect(screen.getAllByText('meiner Meinung nach').length).toBeGreaterThan(0);
     expect(screen.getAllByText('jedoch').length).toBeGreaterThan(0);
     expect(screen.getAllByText('koennten sie').length).toBeGreaterThan(0);
+  });
+
+  it('renders vocabulary drill as a reveal-and-self-grade flashcard', async () => {
+    const onResult = vi.fn<(result: PracticeCardResult) => void>();
+    const task = createVocabularyTask();
+    const settings = getDefaultSettings();
+
+    renderWithLocale(<PracticeCard task={task} settings={settings} onResult={onResult} />);
+
+    expect(screen.getByRole('heading', { name: 'Arbeitsvertrag', level: 1 })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/enter answer/i)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show meaning' }));
+    expect(screen.getByText('employment contract')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'I knew it' }));
+
+    await waitFor(() => {
+      expect(submitPracticeAttempt).toHaveBeenCalledTimes(1);
+    });
+
+    const payload = vi.mocked(submitPracticeAttempt).mock.calls[0][0];
+    expect(payload.taskType).toBe('vocabulary_drill');
+    expect(payload.result).toBe('correct');
+    expect(payload.submittedResponse).toEqual({ selfAssessment: 'known' });
+
+    expect(onResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        result: 'correct',
+        submittedResponse: { selfAssessment: 'known' },
+      }),
+    );
   });
 
   it('displays the CEFR level from lexeme metadata when provided as a string', () => {

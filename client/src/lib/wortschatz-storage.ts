@@ -1,4 +1,5 @@
 import type { PartOfSpeech } from '@shared';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 
 import { resolveLocalStorage } from '@/lib/storage';
 
@@ -6,10 +7,13 @@ const STORAGE_KEY = 'wortschatz.state';
 const STORAGE_CONTEXT = 'wortschatz';
 
 export type WortschatzTab = 'drill' | 'list';
-export type WortschatzLevelFilter = 'B2 Beruf' | 'A1' | 'A2' | 'B1' | 'B2';
+export type WortschatzCollectionFilter = typeof B2_BERUF_COLLECTION;
+export type WortschatzLevelFilter = 'A1' | 'A2' | 'B1' | 'B2';
 
-export const ALL_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['B2 Beruf', 'A1', 'A2', 'B1', 'B2'];
-export const DEFAULT_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['B2 Beruf'];
+export const ALL_WORTSCHATZ_COLLECTIONS: WortschatzCollectionFilter[] = [B2_BERUF_COLLECTION];
+export const DEFAULT_WORTSCHATZ_COLLECTIONS: WortschatzCollectionFilter[] = [B2_BERUF_COLLECTION];
+export const ALL_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = ['A1', 'A2', 'B1', 'B2'];
+export const DEFAULT_WORTSCHATZ_LEVELS: WortschatzLevelFilter[] = [];
 
 export const ALL_WORTSCHATZ_POS: PartOfSpeech[] = [
   'N',
@@ -28,6 +32,7 @@ export const ALL_WORTSCHATZ_POS: PartOfSpeech[] = [
 export interface WortschatzStorageState {
   activeTab: WortschatzTab;
   searchQuery: string;
+  selectedCollections: WortschatzCollectionFilter[];
   selectedLevels: WortschatzLevelFilter[];
   selectedPos: PartOfSpeech[];
   drillSeed: string | null;
@@ -66,6 +71,31 @@ function sanitizeSelectedPos(value: unknown): PartOfSpeech[] {
 
 function isLevelFilter(value: unknown): value is WortschatzLevelFilter {
   return typeof value === 'string' && ALL_WORTSCHATZ_LEVELS.includes(value as WortschatzLevelFilter);
+}
+
+function isCollectionFilter(value: unknown): value is WortschatzCollectionFilter {
+  return typeof value === 'string' && ALL_WORTSCHATZ_COLLECTIONS.includes(value as WortschatzCollectionFilter);
+}
+
+function sanitizeSelectedCollections(value: unknown, legacyLevels: unknown): WortschatzCollectionFilter[] {
+  if (!Array.isArray(value)) {
+    if (Array.isArray(legacyLevels) && legacyLevels.includes('B2 Beruf')) {
+      return [...DEFAULT_WORTSCHATZ_COLLECTIONS];
+    }
+    return [...DEFAULT_WORTSCHATZ_COLLECTIONS];
+  }
+
+  const seen = new Set<WortschatzCollectionFilter>();
+  const selected: WortschatzCollectionFilter[] = [];
+  for (const item of value) {
+    if (!isCollectionFilter(item) || seen.has(item)) {
+      continue;
+    }
+    seen.add(item);
+    selected.push(item);
+  }
+
+  return selected;
 }
 
 function sanitizeSelectedLevels(value: unknown): WortschatzLevelFilter[] {
@@ -108,6 +138,7 @@ export function createEmptyWortschatzState(): WortschatzStorageState {
   return {
     activeTab: 'drill',
     searchQuery: '',
+    selectedCollections: [...DEFAULT_WORTSCHATZ_COLLECTIONS],
     selectedLevels: [...DEFAULT_WORTSCHATZ_LEVELS],
     selectedPos: [...ALL_WORTSCHATZ_POS],
     drillSeed: null,
@@ -131,6 +162,10 @@ function parseStoredState(raw: string): WortschatzStorageState | null {
     return {
       activeTab: parsed.activeTab === 'list' ? 'list' : 'drill',
       searchQuery: typeof parsed.searchQuery === 'string' ? parsed.searchQuery : '',
+      selectedCollections: sanitizeSelectedCollections(
+        (parsed as Partial<WortschatzStorageState>).selectedCollections,
+        (parsed as Partial<WortschatzStorageState> & { selectedLevels?: unknown }).selectedLevels,
+      ),
       selectedLevels: sanitizeSelectedLevels((parsed as Partial<WortschatzStorageState>).selectedLevels),
       selectedPos: sanitizeSelectedPos(parsed.selectedPos),
       drillSeed:

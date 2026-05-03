@@ -162,6 +162,7 @@ describe('Home navigation - practice workflows', () => {
 
     const levelTrigger = await screen.findByRole('combobox', { name: /verb level/i });
     await userEvent.click(levelTrigger);
+    expect(screen.queryByRole('option', { name: 'B2 Beruf' })).not.toBeInTheDocument();
     const b2Option = await screen.findByRole('option', { name: 'B2' });
     await userEvent.click(b2Option);
 

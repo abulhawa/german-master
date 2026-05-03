@@ -38,11 +38,14 @@ import { submitPracticeAttempt } from '@/lib/api';
 import { appendAnswer } from '@/lib/answer-history';
 import { useAnswerHistoryPersistence } from '@/pages/home/hooks/use-answer-history-persistence';
 import {
+  ALL_WORTSCHATZ_COLLECTIONS,
   ALL_WORTSCHATZ_LEVELS,
   ALL_WORTSCHATZ_POS,
+  DEFAULT_WORTSCHATZ_COLLECTIONS,
   DEFAULT_WORTSCHATZ_LEVELS,
   loadWortschatzState,
   saveWortschatzState,
+  type WortschatzCollectionFilter,
   type WortschatzLevelFilter,
   type WortschatzStorageState,
 } from '@/lib/wortschatz-storage';
@@ -91,24 +94,39 @@ function wordMatchesSearch(word: WortschatzWord, searchQuery: string): boolean {
     .includes(searchQuery);
 }
 
+function wordMatchesCollections(word: WortschatzWord, selectedCollections: WortschatzCollectionFilter[]): boolean {
+  if (selectedCollections.length === 0) {
+    return true;
+  }
+
+  if (selectedCollections.includes(B2_BERUF_COLLECTION)) {
+    return word.level === 'B2 Beruf' || word.level === 'B2' || word.level === null;
+  }
+
+  return false;
+}
+
 function wordMatchesLevels(word: WortschatzWord, selectedLevels: WortschatzLevelFilter[]): boolean {
   if (selectedLevels.length === 0) {
     return true;
   }
 
-  if (selectedLevels.includes('B2 Beruf')) {
-    return word.level === 'B2 Beruf' || word.level === 'B2' || word.level === null;
-  }
-
-  return selectedLevels.some((level) => word.level === level);
+  const wordLevel = word.level === 'B2 Beruf' ? 'B2' : word.level;
+  return selectedLevels.some((level) => wordLevel === level);
 }
 
 function buildFilterSignature(
   searchQuery: string,
+  selectedCollections: WortschatzCollectionFilter[],
   selectedLevels: WortschatzLevelFilter[],
   selectedPos: PartOfSpeech[],
 ): string {
-  return `${searchQuery}__${[...selectedLevels].sort().join(',')}__${[...selectedPos].sort().join(',')}`;
+  return [
+    searchQuery,
+    [...selectedCollections].sort().join(','),
+    [...selectedLevels].sort().join(','),
+    [...selectedPos].sort().join(','),
+  ].join('__');
 }
 
 function createDrillSeed(): string {
@@ -182,6 +200,10 @@ function normaliseWortschatzLevel(level: string | null): CEFRLevel | undefined {
     : undefined;
 }
 
+function selfAssessmentFromResult(result: PracticeResult): 'known' | 'forgot' {
+  return result === 'correct' ? 'known' : 'forgot';
+}
+
 function createWortschatzHistoryEntry(options: {
   word: WortschatzWord;
   result: PracticeResult;
@@ -197,6 +219,7 @@ function createWortschatzHistoryEntry(options: {
   const level = normaliseWortschatzLevel(options.word.level);
   const wordRef = `word_${options.word.id}`;
   const collections = [B2_BERUF_COLLECTION];
+  const selfAssessment = selfAssessmentFromResult(options.result);
 
   return {
     id: `${wordRef}:${options.answeredAt}`,
@@ -206,14 +229,14 @@ function createWortschatzHistoryEntry(options: {
     pos,
     renderer: WORTSCHATZ_DRILL_RENDERER,
     result: options.result,
-    submittedResponse: options.word.lemma,
-    expectedResponse: options.word.english ?? '',
+    submittedResponse: { selfAssessment },
+    expectedResponse: { answer: options.word.lemma, english: options.word.english ?? '' },
     promptSummary: options.promptSummary,
     answeredAt: options.answeredAt,
     timeSpentMs: options.timeSpentMs,
     timeSpent: options.timeSpentMs,
     cefrLevel: level,
-    attemptedAnswer: options.word.lemma,
+    attemptedAnswer: selfAssessment,
     correctAnswer: options.word.english ?? undefined,
     prompt: options.promptSummary,
     level,
@@ -284,19 +307,28 @@ export default function WortschatzPage() {
   const availablePos = ALL_WORTSCHATZ_POS.filter((pos) => words.some((word) => word.pos === pos));
   const selectedPos = storageState.selectedPos.filter((pos) => availablePos.includes(pos));
   const effectiveSelectedPos = selectedPos.length > 0 ? selectedPos : availablePos;
+  const selectedCollections = storageState.selectedCollections.filter((collection) =>
+    ALL_WORTSCHATZ_COLLECTIONS.includes(collection),
+  );
   const selectedLevels = storageState.selectedLevels;
   const normalizedSearchQuery = normalizeSearchQuery(storageState.searchQuery);
   const filteredWords = useMemo(
     () =>
       words.filter(
         (word) =>
+          wordMatchesCollections(word, selectedCollections) &&
           wordMatchesLevels(word, selectedLevels) &&
           (effectiveSelectedPos.length === 0 || effectiveSelectedPos.includes(word.pos)) &&
           wordMatchesSearch(word, normalizedSearchQuery),
       ),
-    [effectiveSelectedPos, normalizedSearchQuery, selectedLevels, words],
+    [effectiveSelectedPos, normalizedSearchQuery, selectedCollections, selectedLevels, words],
   );
-  const filterSignature = buildFilterSignature(normalizedSearchQuery, selectedLevels, effectiveSelectedPos);
+  const filterSignature = buildFilterSignature(
+    normalizedSearchQuery,
+    selectedCollections,
+    selectedLevels,
+    effectiveSelectedPos,
+  );
   const wordsById = new Map(words.map((word) => [word.id, word] as const));
   const groupedWords = groupWordsByPos(filteredWords);
   const wordHistoryById = historySummaryQuery.data?.byWordId ?? {};
@@ -316,7 +348,10 @@ export default function WortschatzPage() {
   const currentWordId = storageState.drillOrder[storageState.drillIndex] ?? null;
   const currentWord = currentWordId ? wordsById.get(currentWordId) ?? null : null;
   const isDrillComplete = filteredWords.length > 0 && storageState.drillIndex >= storageState.drillOrder.length;
-  const activeFilterCount = selectedLevels.length + (selectedPos.length === availablePos.length ? 0 : selectedPos.length);
+  const activeFilterCount =
+    selectedCollections.length +
+    selectedLevels.length +
+    (selectedPos.length === availablePos.length ? 0 : selectedPos.length);
 
   useEffect(() => {
     saveWortschatzState(storageState);
@@ -407,7 +442,19 @@ export default function WortschatzPage() {
       selectedLevels:
         level === 'all'
           ? []
-          : toggleListValue(previous.selectedLevels, level).filter((item) => ALL_WORTSCHATZ_LEVELS.includes(item)),
+            : toggleListValue(previous.selectedLevels, level).filter((item) => ALL_WORTSCHATZ_LEVELS.includes(item)),
+    }));
+  };
+
+  const updateCollections = (collection: WortschatzCollectionFilter | 'all') => {
+    setStorageState((previous) => ({
+      ...previous,
+      selectedCollections:
+        collection === 'all'
+          ? []
+          : toggleListValue(previous.selectedCollections, collection).filter((item) =>
+              ALL_WORTSCHATZ_COLLECTIONS.includes(item),
+            ),
     }));
   };
 
@@ -423,6 +470,33 @@ export default function WortschatzPage() {
 
   const filterPanel = (
     <div className="space-y-5">
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-foreground">{copy.filters.collectionTitle}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={selectedCollections.length === 0 ? 'default' : 'outline'}
+            className="rounded-full"
+            onClick={() => updateCollections('all')}
+          >
+            {copy.filters.all}
+          </Button>
+          {ALL_WORTSCHATZ_COLLECTIONS.map((collection) => (
+            <Button
+              key={collection}
+              type="button"
+              size="sm"
+              variant={selectedCollections.includes(collection) ? 'default' : 'outline'}
+              className="rounded-full"
+              onClick={() => updateCollections(collection)}
+            >
+              {copy.collectionLabels[collection]}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-2">
         <p className="text-sm font-semibold text-foreground">{copy.filters.levelTitle}</p>
         <div className="flex flex-wrap gap-2">
@@ -484,6 +558,7 @@ export default function WortschatzPage() {
         onClick={() =>
           setStorageState((previous) => ({
             ...previous,
+            selectedCollections: [...DEFAULT_WORTSCHATZ_COLLECTIONS],
             selectedLevels: [...DEFAULT_WORTSCHATZ_LEVELS],
             selectedPos: [...availablePos],
           }))
@@ -547,6 +622,7 @@ export default function WortschatzPage() {
     const timeSpentMs = Math.max(0, Date.now() - drillStartedAtRef.current);
     const level = normaliseWortschatzLevel(currentWord.level);
     const promptSummary = `${currentWord.lemma} - Wortschatz drill`;
+    const selfAssessment = selfAssessmentFromResult(result);
     const localHistoryEntry = createWortschatzHistoryEntry({
       word: currentWord,
       result,
@@ -586,8 +662,8 @@ export default function WortschatzPage() {
       pos,
       renderer: WORTSCHATZ_DRILL_RENDERER,
       result,
-      submittedResponse: currentWord.lemma,
-      expectedResponse: currentWord.english ?? '',
+      submittedResponse: { selfAssessment },
+      expectedResponse: { answer: currentWord.lemma, english: currentWord.english ?? '' },
       promptSummary,
       timeSpentMs,
       answeredAt,

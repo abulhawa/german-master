@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import { eq, inArray, or, sql, notInArray, type SQL } from "drizzle-orm";
-import type { LexemePos, TaskType } from "@shared";
+import type { LexemePos, TaskGrading, TaskType } from "@shared";
 import { B2_BERUF_COLLECTION } from "@shared/content-sources";
 import {
   db,
@@ -58,9 +58,34 @@ function normaliseCandidateAnswer(value: unknown): string | null {
       const trimmed = formValue.trim();
       return trimmed.length > 0 ? trimmed : null;
     }
+    const selfAssessmentValue = record.selfAssessment;
+    if (typeof selfAssessmentValue === "string") {
+      const trimmed = selfAssessmentValue.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    const englishValue = record.english;
+    if (typeof englishValue === "string") {
+      const trimmed = englishValue.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    const answerValue = record.answer;
+    if (typeof answerValue === "string") {
+      const trimmed = answerValue.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
   }
 
   return null;
+}
+
+function buildVocabularyReveal(solution: unknown): Record<string, unknown> | undefined {
+  if (!solution || typeof solution !== "object") {
+    return undefined;
+  }
+
+  const reveal = { ...(solution as Record<string, unknown>) };
+  delete reveal.answer;
+  return Object.keys(reveal).length > 0 ? reveal : undefined;
 }
 
 function serialiseHistoryAnswer(value: unknown): string {
@@ -241,9 +266,11 @@ export function createListTasksHandler(): RequestHandler {
         taskType: string;
         renderer: string;
         interactionMode: string;
+        grading: TaskGrading;
         pos: string;
         prompt: Record<string, unknown>;
         solution?: unknown;
+        reveal?: Record<string, unknown>;
         queueCap: number;
         lexeme: { id: string; lemma: string; metadata: Record<string, unknown> | null };
       }> = [];
@@ -289,15 +316,20 @@ export function createListTasksHandler(): RequestHandler {
 
         const prompt = normaliseTaskPrompt(row.prompt);
         const lexemeMetadata = normaliseLexemeMetadata(row.lexemeMetadata);
+        const reveal = taskTypeValue === "vocabulary_drill"
+          ? buildVocabularyReveal(row.solution)
+          : undefined;
 
         payload.push({
           taskId,
           taskType: taskTypeValue,
           renderer: rendererValue ?? registryEntry.renderer,
           interactionMode: registryEntry.interactionMode,
+          grading: registryEntry.grading,
           pos: posValue,
           prompt,
           solution: row.solution,
+          ...(reveal ? { reveal } : {}),
           queueCap: registryEntry.queueCap,
           lexeme: {
             id: lexemeId,

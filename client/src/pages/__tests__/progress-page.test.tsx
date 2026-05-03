@@ -170,10 +170,10 @@ describe("ProgressPage", () => {
     expect(screen.getByRole("heading", { name: "gehen" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Haus" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "schnell" })).toBeInTheDocument();
-    expect(screen.getAllByText("vocabulary_drill").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("verb_conjugation").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("noun_case_declension").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("adjective_declension").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Wortschatz").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Verb conjugation").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Noun declension").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Adjective endings").length).toBeGreaterThan(0);
   });
 
   it("uses canonical B2 Beruf vocabulary labels without showing legacy word ids", async () => {
@@ -181,6 +181,8 @@ describe("ProgressPage", () => {
 
     expect(await screen.findByRole("heading", { name: "Arbeitsvertrag" })).toBeInTheDocument();
     expect(screen.getAllByText("B2 Beruf").length).toBeGreaterThan(0);
+    expect(screen.getByText("Collection B2 Beruf")).toBeInTheDocument();
+    expect(screen.queryByText("Level B2 Beruf")).not.toBeInTheDocument();
     expect(screen.queryByText("word_123")).not.toBeInTheDocument();
   });
 
