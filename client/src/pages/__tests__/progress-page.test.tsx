@@ -150,6 +150,23 @@ function createProgressHistory(): TaskAnswerHistoryItem[] {
   ];
 }
 
+function createPagedProgressHistory(count: number, startAt = 1): TaskAnswerHistoryItem[] {
+  return Array.from({ length: count }, (_, index) =>
+    createHistoryEntry({
+      id: `paged-${startAt + index}`,
+      taskType: "vocabulary_drill",
+      pos: "noun",
+      promptSummary: `Wort ${startAt + index} - vocabulary drill`,
+      lexeme: {
+        id: `lexeme-paged-${startAt + index}`,
+        lemma: `Wort ${startAt + index}`,
+        pos: "noun",
+        level: "B2",
+      },
+    }),
+  );
+}
+
 describe("ProgressPage", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -218,5 +235,27 @@ describe("ProgressPage", () => {
         limit: 500,
       });
     });
+  });
+
+  it("loads additional history pages when the first remote page is full", async () => {
+    mocks.fetchPracticeHistory
+      .mockResolvedValueOnce(createPagedProgressHistory(500))
+      .mockResolvedValueOnce(createPagedProgressHistory(1, 501));
+
+    render(<ProgressPage />);
+
+    await waitFor(() => {
+      expect(mocks.fetchPracticeHistory).toHaveBeenCalledTimes(2);
+    });
+    expect(mocks.fetchPracticeHistory).toHaveBeenNthCalledWith(1, {
+      deviceId: "test-device-id",
+      limit: 500,
+    });
+    expect(mocks.fetchPracticeHistory).toHaveBeenNthCalledWith(2, {
+      deviceId: "test-device-id",
+      limit: 500,
+      offset: 500,
+    });
+    expect(screen.getAllByText("501").length).toBeGreaterThan(0);
   });
 });

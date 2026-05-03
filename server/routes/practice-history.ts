@@ -23,6 +23,7 @@ import { normaliseLexemePartOfSpeech } from "@shared/pos-normalizer";
 
 const practiceHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
   result: z.enum(["correct", "incorrect"]).optional(),
   level: levelSchema.optional(),
   deviceId: z.string().trim().min(6).max(64).optional(),
@@ -166,7 +167,7 @@ export function createPracticeHistoryRouter(): Router {
       });
     }
 
-    const { limit, result, level, deviceId } = parsed.data;
+    const { limit, offset, result, level, deviceId } = parsed.data;
     const sessionUserId = getSessionUserId(req.authSession);
 
     if (!sessionUserId && !deviceId) {
@@ -236,7 +237,8 @@ export function createPracticeHistoryRouter(): Router {
 
       const rows = await filteredQuery
         .orderBy(desc(practiceHistory.submittedAt), desc(practiceHistory.id))
-        .limit(limit);
+        .limit(limit)
+        .offset(offset);
 
       const history = rows.map((row) => toAnswerHistoryItem(row as PracticeHistoryRow));
       res.setHeader("Cache-Control", "no-store");

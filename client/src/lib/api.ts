@@ -261,6 +261,7 @@ export interface PracticeHistoryFilters {
   result?: 'correct' | 'incorrect';
   level?: CEFRLevel;
   limit?: number;
+  offset?: number;
 }
 
 export async function fetchPracticeHistory(filters: PracticeHistoryFilters): Promise<TaskAnswerHistoryItem[]> {
@@ -274,6 +275,9 @@ export async function fetchPracticeHistory(filters: PracticeHistoryFilters): Pro
   }
   if (filters.limit) {
     params.set('limit', String(filters.limit));
+  }
+  if (filters.offset) {
+    params.set('offset', String(filters.offset));
   }
 
   const query = params.toString();

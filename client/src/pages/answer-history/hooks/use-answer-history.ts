@@ -44,6 +44,38 @@ interface UseAnswerHistoryResult {
 }
 
 const REMOTE_HISTORY_LIMIT = 500;
+const REMOTE_HISTORY_MAX_PAGES = 100;
+
+async function fetchCompletePracticeHistory(deviceId: string): Promise<AnsweredQuestion[]> {
+  const history: AnsweredQuestion[] = [];
+  const seen = new Set<string>();
+  let offset = 0;
+
+  for (let page = 0; page < REMOTE_HISTORY_MAX_PAGES; page += 1) {
+    const remotePage = await fetchPracticeHistory({
+      deviceId,
+      limit: REMOTE_HISTORY_LIMIT,
+      ...(offset > 0 ? { offset } : {}),
+    });
+    const newRows = remotePage.filter((entry) => {
+      if (seen.has(entry.id)) {
+        return false;
+      }
+      seen.add(entry.id);
+      return true;
+    });
+
+    history.push(...newRows);
+
+    if (remotePage.length < REMOTE_HISTORY_LIMIT || newRows.length === 0) {
+      break;
+    }
+
+    offset += remotePage.length;
+  }
+
+  return history;
+}
 
 export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHistoryOptions = {}): UseAnswerHistoryResult {
   const authSession = useAuthSession();
@@ -70,7 +102,7 @@ export function useAnswerHistory({ pageSize = DEFAULT_PAGE_SIZE }: UseAnswerHist
       setLoadError(null);
 
       try {
-        const remoteHistory = await fetchPracticeHistory({ deviceId, limit: REMOTE_HISTORY_LIMIT });
+        const remoteHistory = await fetchCompletePracticeHistory(deviceId);
         if (cancelled) {
           return;
         }

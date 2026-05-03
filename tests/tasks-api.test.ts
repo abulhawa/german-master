@@ -712,6 +712,65 @@ describe('tasks API', () => {
     expect(history.every((item) => item.id.startsWith('practice_history:'))).toBe(true);
   });
 
+  it('paginates practice_history rows for signed-in Progress reads', async () => {
+    if (!dbContext) {
+      throw new Error('test database not initialised');
+    }
+
+    const userId = 'canonical-history-pagination-user-1';
+    const deviceId = 'canonical-history-pagination-device-1';
+    getSessionFromRequestMock.mockResolvedValue({
+      session: { id: 'session-canonical-history-pagination', expiresAt: new Date().toISOString() },
+      user: { id: userId, role: 'standard' },
+    } as any);
+
+    const taskResponse = await invokeApi('/api/tasks?taskTypes=conjugate_form&pos=verb&limit=1');
+    expect(taskResponse.status).toBe(200);
+    const task = (taskResponse.bodyJson as any).tasks[0];
+    expect(task).toBeDefined();
+
+    for (let index = 1; index <= 3; index += 1) {
+      const submittedAt = new Date(Date.UTC(2025, 4, 1, 0, 0, index)).toISOString();
+      await dbContext.pool.query(
+        [
+          'insert into practice_history',
+          '(task_id, lexeme_id, pos, task_type, renderer, device_id, user_id, result, response_ms, submitted_at, answered_at, queued_at, cefr_level, hints_used, metadata)',
+          'values',
+          '($1, $2, $3, $4, $5, $6, $7, $8::practice_result, 1000, $9, $9, null, $10, false, $11::jsonb)',
+        ].join(' '),
+        [
+          task.taskId,
+          task.lexeme.id,
+          task.pos,
+          task.taskType,
+          task.renderer,
+          deviceId,
+          userId,
+          'correct',
+          submittedAt,
+          'A1',
+          JSON.stringify({
+            submittedResponse: `answer ${index}`,
+            expectedResponse: 'answer',
+            promptSummary: `paginated attempt ${index}`,
+          }),
+        ],
+      );
+    }
+
+    const firstPageResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=2`);
+    expect(firstPageResponse.status).toBe(200);
+    const firstPage = ((firstPageResponse.bodyJson as any).history ?? []) as any[];
+    expect(firstPage).toHaveLength(2);
+    expect(firstPage[0].promptSummary).toBe('paginated attempt 3');
+
+    const secondPageResponse = await invokeApi(`/api/practice/history?deviceId=${deviceId}&limit=2&offset=2`);
+    expect(secondPageResponse.status).toBe(200);
+    const secondPage = ((secondPageResponse.bodyJson as any).history ?? []) as any[];
+    expect(secondPage).toHaveLength(1);
+    expect(secondPage[0].promptSummary).toBe('paginated attempt 1');
+  });
+
   it('stores canonical vocabulary ids for direct web vocabulary submissions', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
