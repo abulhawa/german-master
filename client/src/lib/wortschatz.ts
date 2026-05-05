@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import type { WortschatzWord } from '@shared';
-import { ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
 import { getDeviceId } from './device';
 import { createSupabaseAuthHeaders } from './supabase';
 
@@ -72,8 +71,7 @@ export async function fetchWortschatzWords(): Promise<WortschatzWordsResponse> {
 
   const payload = await response.json();
   const words = wortschatzWordsSchema.parse(payload);
-  const datasetVersion =
-    response.headers.get('x-wortschatz-dataset-version') ?? ANDROID_B2_BERUF_VERSION;
+  const datasetVersion = response.headers.get('x-wortschatz-dataset-version') ?? 'unversioned';
 
   return {
     words,

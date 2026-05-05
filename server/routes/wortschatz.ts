@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
+
 import { Router } from 'express';
-import { asc, count, eq, like, or, sql } from 'drizzle-orm';
+import { asc, count, eq, sql } from 'drizzle-orm';
 
 import { db, lexemes, practiceHistory, words } from '@db';
 import type { PartOfSpeech, WortschatzWord } from '@shared';
-import { ANDROID_B2_BERUF_SOURCE, ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 import { getSessionUserId, sendError } from './shared.js';
 
 interface WortschatzHistorySummaryRow {
@@ -27,16 +29,9 @@ interface WortschatzHistorySummary {
   byWordId: Record<string, WortschatzWordHistorySummary>;
 }
 
-function createDelimitedSourceFilter(source: string) {
-  return or(
-    sql`coalesce(${words.sourcesCsv}, '') = ${source}`,
-    like(words.sourcesCsv, `${source};%`),
-    like(words.sourcesCsv, `%;${source}`),
-    like(words.sourcesCsv, `%;${source};%`),
-  );
-}
+let cachedDatasetVersion: { signature: string; version: string } | null = null;
 
-function mapHistoryPosToWordPosSql(column: any) {
+function mapHistoryPosToWordPosSql(column: unknown) {
   return sql`case lower(${column})
     when 'v' then 'V'
     when 'verb' then 'V'
@@ -51,12 +46,12 @@ function mapHistoryPosToWordPosSql(column: any) {
     when 'det' then 'Det'
     when 'determiner' then 'Det'
     when 'art' then 'Det'
-    when 'prep' then 'Pr\u00e4p'
-    when 'pr\u00e4p' then 'Pr\u00e4p'
-    when 'pr\u00e3\u00a4p' then 'Pr\u00e4p'
-    when 'pr\u00e3\u0192\u00e2\u00a4p' then 'Pr\u00e4p'
-    when 'praep' then 'Pr\u00e4p'
-    when 'preposition' then 'Pr\u00e4p'
+    when 'prep' then 'Präp'
+    when 'präp' then 'Präp'
+    when 'prã¤p' then 'Präp'
+    when 'prãƒâ¤p' then 'Präp'
+    when 'praep' then 'Präp'
+    when 'preposition' then 'Präp'
     when 'konj' then 'Konj'
     when 'conj' then 'Konj'
     when 'conjunction' then 'Konj'
@@ -68,6 +63,27 @@ function mapHistoryPosToWordPosSql(column: any) {
     when 'interj' then 'Interj'
     when 'interjection' then 'Interj'
     else '' end`;
+}
+
+function mapWordPosToLexemePosSql(column: unknown) {
+  return sql`case ${column}
+    when 'V' then 'verb'
+    when 'N' then 'noun'
+    when 'Adj' then 'adjective'
+    when 'Adv' then 'adverb'
+    when 'Pron' then 'pronoun'
+    when 'Det' then 'determiner'
+    when 'Präp' then 'preposition'
+    when 'Konj' then 'conjunction'
+    when 'Num' then 'numeral'
+    when 'Part' then 'particle'
+    when 'Interj' then 'interjection'
+    else '' end`;
+}
+
+function collectionFilterOnLexemeMetadata(metadataColumn: unknown) {
+  const collectionJson = JSON.stringify([B2_BERUF_COLLECTION]);
+  return sql`coalesce(${metadataColumn} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`;
 }
 
 function toCount(value: number | string | bigint): number {
@@ -124,6 +140,46 @@ function buildHistorySummary(rows: WortschatzHistorySummaryRow[]): WortschatzHis
   };
 }
 
+function computeDatasetVersion(
+  rows: Array<{
+    id: number;
+    lemma: string;
+    pos: string;
+    level: string | null;
+    english: string | null;
+    exampleDe: string | null;
+    exampleEn: string | null;
+    gender: string | null;
+    plural: string | null;
+    updatedAt: Date;
+  }>,
+): string {
+  const signature = rows
+    .map((row) => `${row.id}:${row.updatedAt.toISOString()}`)
+    .join('|');
+
+  if (cachedDatasetVersion?.signature === signature) {
+    return cachedDatasetVersion.version;
+  }
+
+  const payload = JSON.stringify(
+    rows.map((row) => ({
+      id: row.id,
+      lemma: row.lemma,
+      pos: row.pos,
+      level: row.level,
+      english: row.english,
+      exampleDe: row.exampleDe,
+      exampleEn: row.exampleEn,
+      gender: row.gender,
+      plural: row.plural,
+    })),
+  );
+  const version = createHash('sha1').update(payload).digest('hex');
+  cachedDatasetVersion = { signature, version };
+  return version;
+}
+
 export function createWortschatzRouter(): Router {
   const router = Router();
 
@@ -140,18 +196,31 @@ export function createWortschatzRouter(): Router {
           exampleEn: words.exampleEn,
           gender: words.gender,
           plural: words.plural,
+          updatedAt: words.updatedAt,
         })
         .from(words)
-        .where(createDelimitedSourceFilter(ANDROID_B2_BERUF_SOURCE))
+        .innerJoin(
+          lexemes,
+          sql`lower(${words.lemma}) = lower(${lexemes.lemma})
+            AND ${lexemes.pos} = ${mapWordPosToLexemePosSql(words.pos)}`,
+        )
+        .where(collectionFilterOnLexemeMetadata(lexemes.metadata))
         .orderBy(sql`lower(${words.lemma})`, asc(words.id));
 
       const payload: WortschatzWord[] = rows.map((row) => ({
-        ...row,
+        id: row.id,
+        lemma: row.lemma,
         pos: row.pos as PartOfSpeech,
+        level: row.level,
+        english: row.english,
+        exampleDe: row.exampleDe,
+        exampleEn: row.exampleEn,
+        gender: row.gender,
+        plural: row.plural,
       }));
 
       res.setHeader('Cache-Control', 'no-store');
-      res.setHeader('X-Wortschatz-Dataset-Version', ANDROID_B2_BERUF_VERSION);
+      res.setHeader('X-Wortschatz-Dataset-Version', computeDatasetVersion(rows));
       res.json(payload);
     } catch (error) {
       console.error('Failed to load Wortschatz words', error);
@@ -171,7 +240,6 @@ export function createWortschatzRouter(): Router {
     }
 
     try {
-      const sourceFilter = createDelimitedSourceFilter(ANDROID_B2_BERUF_SOURCE);
       const identityFilter = sessionUserId
         ? eq(practiceHistory.userId, sessionUserId)
         : eq(practiceHistory.deviceId, deviceId!);
@@ -183,13 +251,15 @@ export function createWortschatzRouter(): Router {
           count: count(),
         })
         .from(practiceHistory)
-        .leftJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
+        .innerJoin(lexemes, eq(practiceHistory.lexemeId, lexemes.id))
         .innerJoin(
           words,
           sql`lower(${words.lemma}) = lower(coalesce(${practiceHistory.lemma}, ${lexemes.lemma}))
             AND ${words.pos} = ${mapHistoryPosToWordPosSql(practiceHistory.pos)}`,
         )
-        .where(sql`${identityFilter} AND ${sourceFilter}`)
+        .where(
+          sql`${identityFilter} AND ${collectionFilterOnLexemeMetadata(lexemes.metadata)}`,
+        )
         .groupBy(words.id, practiceHistory.result);
 
       res.setHeader('Cache-Control', 'no-store');

@@ -31,6 +31,7 @@ export interface AggregatedWord {
   posAttributes?: WordPosAttributes | null;
   enrichmentAppliedAt: string | null;
   enrichmentMethod: EnrichmentMethod | null;
+  collections?: string[] | null;
   sourcesCsv?: string | null;
   sourceNotes?: string | null;
 }

@@ -27,6 +27,7 @@ type WordRecord = {
   superlative: string | null;
   approved: boolean;
   complete: boolean;
+  collections: string[];
   exportUid: string;
   exportedAt: Date | null;
   translations: Array<{
@@ -431,6 +432,7 @@ function makeWord(lemma: string, pos: SupportedPos): WordRecord {
     superlative: null,
     approved: true,
     complete: false,
+    collections: [],
     exportUid: '00000000-0000-0000-0000-000000000000',
     exportedAt: null,
     translations: null,

@@ -252,6 +252,7 @@ export async function createWord(data: WordCreateInput) {
     superlative: null,
     approved: false,
     complete: false,
+    collections: [],
     exportUid: "00000000-0000-0000-0000-000000000000",
     exportedAt: null,
     translations: null,

@@ -178,6 +178,44 @@ export function normalizeStringArray(values: Array<string | null | undefined>): 
   return result;
 }
 
+export function normaliseCollectionList(value: unknown): string[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  const values = normalizeStringArray(
+    value.map((entry) => (entry === null || entry === undefined ? null : String(entry))),
+  );
+  return values.length > 0 ? values : null;
+}
+
+export function normaliseTranslationsFromUnknown(value: unknown): WordTranslation[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const parsed: WordTranslation[] = [];
+  for (const entry of value) {
+    if (!isRecord(entry)) {
+      continue;
+    }
+    const text = normaliseString(entry.value);
+    if (!text) {
+      continue;
+    }
+    parsed.push({
+      value: text,
+      source: normaliseString(entry.source),
+      language: normaliseString(entry.language),
+      confidence:
+        typeof entry.confidence === 'number' && Number.isFinite(entry.confidence)
+          ? entry.confidence
+          : null,
+    });
+  }
+
+  return mergeTranslations(null, parsed);
+}
+
 export function mergeDelimitedMetadata(
   existing: string | null | undefined,
   incoming: string | null | undefined,

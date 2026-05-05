@@ -2,7 +2,7 @@ import { getSessionFromRequestMock } from './helpers/mock-auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AggregatedWord } from '../scripts/etl/types';
-import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '../shared/content-sources';
+import { B2_BERUF_COLLECTION } from '../shared/content-sources';
 import { setupTestDatabase, type TestDatabaseContext } from './helpers/pg';
 import { createApiInvoker } from './helpers/vercel';
 
@@ -159,7 +159,7 @@ describe('tasks API', () => {
     {
       lemma: 'Arbeitsvertrag',
       pos: 'N',
-      level: 'B2 Beruf',
+      level: 'B2',
       english: 'employment contract',
       exampleDe: 'Der Arbeitsvertrag regelt die Probezeit.',
       exampleEn: 'The employment contract defines the probation period.',
@@ -181,7 +181,7 @@ describe('tasks API', () => {
       posAttributes: null,
       enrichmentAppliedAt: null,
       enrichmentMethod: null,
-      sourcesCsv: ANDROID_B2_BERUF_SOURCE,
+      collections: [B2_BERUF_COLLECTION],
     },
   ];
 
@@ -239,11 +239,11 @@ describe('tasks API', () => {
       [
         lemma,
         'N',
-        'B2 Beruf',
+        'B2',
         'employment contract',
         'der',
         'Arbeitsvertraege',
-        ANDROID_B2_BERUF_SOURCE,
+        null,
       ],
     );
     return `word_${insertedWord.rows[0]!.id}`;
@@ -361,43 +361,6 @@ describe('tasks API', () => {
       `/api/tasks?taskTypes=vocabulary_drill&level=${encodeURIComponent('B2 Beruf')}&collection=${B2_BERUF_COLLECTION}&limit=10`,
     );
     expect(legacyLevelResponse.status).toBe(400);
-  });
-
-  it('maps legacy B2 Beruf lexeme metadata to the B2 Beruf collection filter during migration', async () => {
-    if (!dbContext) {
-      throw new Error('test database not initialised');
-    }
-
-    await dbContext.pool.query(
-      'update lexemes set metadata = $1::jsonb where lemma = $2',
-      [JSON.stringify({ level: 'B2 Beruf', english: 'employment contract' }), 'Arbeitsvertrag'],
-    );
-    await dbContext.pool.query(
-      [
-        "update task_specs set",
-        "prompt = prompt - 'collections',",
-        "metadata = metadata - 'collections'",
-        "where task_type = 'vocabulary_drill'",
-        "and lexeme_id = (select id from lexemes where lemma = 'Arbeitsvertrag' limit 1)",
-      ].join(' '),
-    );
-
-    const collectionResponse = await invokeApi(
-      `/api/tasks?taskTypes=vocabulary_drill&collection=${B2_BERUF_COLLECTION}&limit=10`,
-    );
-    expect(collectionResponse.status).toBe(200);
-    const collectionTasks = ((collectionResponse.bodyJson as any).tasks ?? []) as any[];
-    expect(collectionTasks.some((task) => task.lexeme?.lemma === 'Arbeitsvertrag')).toBe(true);
-    expect(collectionTasks.every((task) => task.lexeme?.lemma !== 'Projekt')).toBe(true);
-
-    const canonicalResponse = await invokeApi(
-      `/api/tasks?taskTypes=vocabulary_drill&level=B2&collection=${B2_BERUF_COLLECTION}&limit=10`,
-    );
-    expect(canonicalResponse.status).toBe(200);
-    const canonicalTasks = ((canonicalResponse.bodyJson as any).tasks ?? []) as any[];
-    expect(canonicalTasks.length).toBeGreaterThan(0);
-    expect(canonicalTasks.some((task) => task.lexeme?.lemma === 'Arbeitsvertrag')).toBe(true);
-    expect(canonicalTasks.every((task) => task.prompt?.cefrLevel === 'B2')).toBe(true);
   });
 
   it('keeps seeded ordering stable and varies order for different seeds', async () => {

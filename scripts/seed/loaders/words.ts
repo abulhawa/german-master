@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ANDROID_B2_BERUF_SOURCE } from '@shared/content-sources';
 import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import type { PartOfSpeech, WordPosAttributes } from '@shared/types';
 
@@ -13,14 +12,15 @@ import {
   mergeTranslations,
   mergeWordPosAttributes,
   normaliseBoolean,
+  normaliseCollectionList,
   normaliseExamples,
   normaliseLevel,
   normaliseString,
+  normaliseTranslationsFromUnknown,
   normalizeStringArray,
   pickLatestTimestamp,
 } from '../normalizers';
 import type { AggregatedWordWithKey, BasePosJsonRecord, RawWordRow } from '../types';
-import { loadBundledWortschatzRows } from './wortschatz';
 
 interface VerbJsonRecord extends BasePosJsonRecord {
   verb?: {
@@ -82,15 +82,12 @@ export function keyFor(lemma: string, pos: string): string {
   return `${lemma.toLowerCase()}::${normaliseLegacyPartOfSpeech(pos) ?? pos.trim()}`;
 }
 
-function hasSourceTag(value: string | null | undefined, target: string): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return value
-    .split(';')
-    .map((token) => token.trim())
-    .some((token) => token === target);
+function mergeCollections(
+  existing: string[] | null | undefined,
+  incoming: string[] | null | undefined,
+): string[] | null {
+  const values = normalizeStringArray([...(existing ?? []), ...(incoming ?? [])]);
+  return values.length > 0 ? values : null;
 }
 
 function pickPreferredLevel(existing: string | null, incoming: string | null): string | null {
@@ -132,13 +129,10 @@ function mergeWord(existing: RawWordRow | null, incoming: RawWordRow): RawWordRo
     incoming.enrichmentAppliedAt ?? null,
   );
   merged.enrichmentMethod = existing.enrichmentMethod ?? incoming.enrichmentMethod ?? null;
+  merged.collections = mergeCollections(existing.collections, incoming.collections);
   merged.sourcesCsv = mergeDelimitedMetadata(existing.sourcesCsv, incoming.sourcesCsv);
   merged.sourceNotes = mergeDelimitedMetadata(existing.sourceNotes, incoming.sourceNotes);
-  const preferredLevel = pickPreferredLevel(existing.level ?? null, incoming.level ?? null);
-  merged.level =
-    hasSourceTag(merged.sourcesCsv, ANDROID_B2_BERUF_SOURCE) && incoming.level
-      ? incoming.level
-      : preferredLevel;
+  merged.level = pickPreferredLevel(existing.level ?? null, incoming.level ?? null);
   if (incoming.approved !== undefined && incoming.approved !== null) {
     merged.approved = incoming.approved;
   } else if (merged.approved === undefined) {
@@ -209,12 +203,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: normaliseString(verb.perfekt),
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -250,12 +245,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -291,12 +287,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: normaliseString(adjective.comparative),
         superlative: normaliseString(adjective.superlative),
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -332,12 +329,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: normaliseString(adverb.comparative),
         superlative: normaliseString(adverb.superlative),
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -400,12 +398,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -440,12 +439,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -480,12 +480,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -520,12 +521,13 @@ const POS_FILE_DEFINITIONS: PosFileDefinition[] = [
         perfekt: null,
         comparative: null,
         superlative: null,
-        translations: null,
+        translations: normaliseTranslationsFromUnknown(data.translations),
         examples,
         posAttributes: null,
         enrichmentAppliedAt: null,
         enrichmentMethod: null,
         approved: normaliseBoolean(data.approved) ?? false,
+        collections: normaliseCollectionList(data.collections),
       } satisfies RawWordRow;
     },
   },
@@ -585,7 +587,6 @@ export async function loadPosWordRowsFromDisk(rootDir: string): Promise<RawWordR
 
 export async function aggregateWords(rootDir: string): Promise<AggregatedWordWithKey[]> {
   const posRows = await loadPosWordRowsFromDisk(rootDir);
-  const bundledWortschatzRows = await loadBundledWortschatzRows(rootDir);
   const aggregated = new Map<string, RawWordRow>();
 
   const upsertAggregatedRow = (row: RawWordRow | null | undefined) => {
@@ -599,9 +600,6 @@ export async function aggregateWords(rootDir: string): Promise<AggregatedWordWit
   };
 
   for (const row of posRows) {
-    upsertAggregatedRow(row);
-  }
-  for (const row of bundledWortschatzRows) {
     upsertAggregatedRow(row);
   }
 
@@ -635,6 +633,7 @@ export async function aggregateWords(rootDir: string): Promise<AggregatedWordWit
       posAttributes: value.posAttributes ?? null,
       enrichmentAppliedAt: value.enrichmentAppliedAt ?? null,
       enrichmentMethod: value.enrichmentMethod ?? null,
+      collections: value.collections ?? null,
       sourcesCsv: value.sourcesCsv ?? null,
       sourceNotes: value.sourceNotes ?? null,
     });

@@ -17,6 +17,10 @@ export function ensureDatabase(): DatabaseClient {
 
 export async function ensureLegacySchema(db: DatabaseClient): Promise<void> {
   await db.execute(sql`ALTER TABLE words ADD COLUMN IF NOT EXISTS pos_attributes JSONB`);
+  await db.execute(sql`ALTER TABLE words ADD COLUMN IF NOT EXISTS collections JSONB`);
+  await db.execute(sql`UPDATE words SET collections = '[]'::jsonb WHERE collections IS NULL`);
+  await db.execute(sql`ALTER TABLE words ALTER COLUMN collections SET DEFAULT '[]'::jsonb`);
+  await db.execute(sql`ALTER TABLE words ALTER COLUMN collections SET NOT NULL`);
 }
 
 export async function resetSeededContent(db: DatabaseClient): Promise<void> {

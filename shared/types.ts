@@ -76,6 +76,7 @@ export interface Word {
   superlative: string | null;
   approved: boolean;
   complete: boolean;
+  collections: string[];
   exportUid: string;
   exportedAt: Date | null;
   translations: WordTranslation[] | null;

@@ -275,14 +275,12 @@ function normaliseCollections(source: TaskTemplateSource): string[] {
       new Set(source.collections.map((collection) => collection.trim()).filter(Boolean)),
     ).sort();
   }
-  if (source.level === 'B2 Beruf') {
-    return [B2_BERUF_COLLECTION];
-  }
   return [];
 }
 
 function canonicalLevel(source: TaskTemplateSource): string | null {
-  if (source.level === 'B2 Beruf') {
+  const collections = normaliseCollections(source);
+  if (collections.includes(B2_BERUF_COLLECTION)) {
     return 'B2';
   }
   return source.level;

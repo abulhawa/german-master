@@ -46,7 +46,7 @@ describe('Wortschatz history summary API', () => {
         'values ($1, $2, $3, $4, true, true, $5)',
         'returning id',
       ].join(' '),
-      ['Arbeitsvertrag', 'N', 'B2 Beruf', 'employment contract', 'android_b2_beruf'],
+      ['Arbeitsvertrag', 'N', 'B2', 'employment contract', null],
     );
     const wordId = wordResult.rows[0]!.id;
 
@@ -55,11 +55,15 @@ describe('Wortschatz history summary API', () => {
         'insert into words (lemma, pos, level, english, approved, complete, sources_csv)',
         'values ($1, $2, $3, $4, true, true, $5)',
       ].join(' '),
-      ['Projekt', 'N', 'B2 Beruf', 'project', 'other_source'],
+      ['Projekt', 'N', 'B2', 'project', null],
     );
 
     await dbContext.pool.query(
-      "insert into lexemes (id, lemma, language, pos) values ('lex-1', 'Arbeitsvertrag', 'de', 'noun'), ('lex-2', 'Projekt', 'de', 'noun')",
+      [
+        'insert into lexemes (id, lemma, language, pos, metadata)',
+        "values ('lex-1', 'Arbeitsvertrag', 'de', 'noun', '{\"collections\":[\"b2_beruf\"]}'::jsonb),",
+        "('lex-2', 'Projekt', 'de', 'noun', '{\"collections\":[]}'::jsonb)",
+      ].join(' '),
     );
 
     await dbContext.pool.query(
@@ -117,12 +121,15 @@ describe('Wortschatz history summary API', () => {
         'values ($1, $2, $3, $4, true, true, $5)',
         'returning id',
       ].join(' '),
-      ['Arbeitsvertrag', 'N', 'B2 Beruf', 'employment contract', 'android_b2_beruf'],
+      ['Arbeitsvertrag', 'N', 'B2', 'employment contract', null],
     );
     const wordId = wordResult.rows[0]!.id;
 
     await dbContext.pool.query(
-      "insert into lexemes (id, lemma, language, pos) values ('lex-android-1', 'Arbeitsvertrag', 'de', 'noun')",
+      [
+        'insert into lexemes (id, lemma, language, pos, metadata)',
+        "values ('lex-android-1', 'Arbeitsvertrag', 'de', 'noun', '{\"collections\":[\"b2_beruf\"]}'::jsonb)",
+      ].join(' '),
     );
 
     await dbContext.pool.query(

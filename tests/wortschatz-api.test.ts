@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ANDROID_B2_BERUF_SOURCE, ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 
 import { setupTestDatabase, type TestDatabaseContext } from './helpers/pg';
 import { createApiInvoker } from './helpers/vercel';
@@ -27,8 +27,6 @@ describe('wortschatz API', () => {
         plural: 'Projekte',
         approved: true,
         complete: true,
-        sourcesCsv: ANDROID_B2_BERUF_SOURCE,
-        sourceNotes: ANDROID_B2_BERUF_VERSION,
       },
       {
         lemma: 'bewerben',
@@ -39,8 +37,6 @@ describe('wortschatz API', () => {
         exampleEn: 'She is applying for the position.',
         approved: true,
         complete: true,
-        sourcesCsv: `manual;${ANDROID_B2_BERUF_SOURCE}`,
-        sourceNotes: ANDROID_B2_BERUF_VERSION,
       },
       {
         lemma: 'Haus',
@@ -53,8 +49,27 @@ describe('wortschatz API', () => {
         plural: 'Häuser',
         approved: true,
         complete: true,
-        sourcesCsv: 'manual',
-        sourceNotes: 'manual',
+      },
+    ]);
+
+    await context.db.insert(schema.lexemes).values([
+      {
+        id: 'de:noun:projekt:11111111',
+        lemma: 'Projekt',
+        pos: 'noun',
+        metadata: { level: 'B2', collections: [B2_BERUF_COLLECTION] },
+      },
+      {
+        id: 'de:verb:bewerben:22222222',
+        lemma: 'bewerben',
+        pos: 'verb',
+        metadata: { level: 'B2', collections: [B2_BERUF_COLLECTION] },
+      },
+      {
+        id: 'de:noun:haus:33333333',
+        lemma: 'Haus',
+        pos: 'noun',
+        metadata: { level: 'A1', collections: [] },
       },
     ]);
 
@@ -72,11 +87,11 @@ describe('wortschatz API', () => {
     }
   });
 
-  it('returns only source-tagged words in the public response shape', async () => {
+  it('returns only collection-tagged words in the public response shape', async () => {
     const response = await invokeApi('/api/wortschatz/words');
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('x-wortschatz-dataset-version')).toBe(ANDROID_B2_BERUF_VERSION);
+    expect(response.headers.get('x-wortschatz-dataset-version')).toMatch(/^[a-f0-9]{40}$/);
 
     const body = response.bodyJson as Array<Record<string, unknown>>;
     expect(body).toEqual([

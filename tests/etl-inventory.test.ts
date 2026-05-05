@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildLexemeInventory, buildTaskInventory } from '../scripts/etl/golden';
 import { validateWord } from '../scripts/etl/validators';
-import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '@shared/content-sources';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 import type { AggregatedWord } from '../scripts/etl/types';
 
 function createVerb(): AggregatedWord {
@@ -183,8 +183,8 @@ describe('buildLexemeInventory', () => {
   it('canonicalizes B2 Beruf lexemes and vocabulary drill tasks', () => {
     const word = createNoun();
     word.lemma = 'Arbeitsvertrag';
-    word.level = 'B2 Beruf';
-    word.sourcesCsv = ANDROID_B2_BERUF_SOURCE;
+    word.level = 'B2';
+    word.collections = [B2_BERUF_COLLECTION];
 
     const lexemeInventory = buildLexemeInventory([word]);
     const taskInventory = buildTaskInventory([word]);
@@ -195,7 +195,7 @@ describe('buildLexemeInventory', () => {
       level: 'B2',
       collections: [B2_BERUF_COLLECTION],
     });
-    expect(lexeme?.sourceIds).toContain(ANDROID_B2_BERUF_SOURCE);
+    expect(lexeme?.sourceIds.length).toBeGreaterThan(0);
     expect(vocabularyTask).toMatchObject({
       lexemeId: lexeme?.id,
       taskType: 'vocabulary_drill',
@@ -220,8 +220,8 @@ describe('buildLexemeInventory', () => {
 
     const berufNoun = createNoun();
     berufNoun.lemma = 'Bewohner/in';
-    berufNoun.level = 'B2 Beruf';
-    berufNoun.sourcesCsv = ANDROID_B2_BERUF_SOURCE;
+    berufNoun.level = 'B2';
+    berufNoun.collections = [B2_BERUF_COLLECTION];
 
     const standardVerb = createVerb();
     standardVerb.lemma = 'drucken';

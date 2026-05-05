@@ -31,6 +31,7 @@ export interface RawWordRow {
   enrichmentAppliedAt?: string | null;
   enrichmentMethod?: EnrichmentMethod | null;
   approved?: boolean | null;
+  collections?: string[] | null;
   sourcesCsv?: string | null;
   sourceNotes?: string | null;
 }
@@ -40,6 +41,8 @@ export interface BasePosJsonRecord {
   level?: unknown;
   english?: unknown;
   approved?: unknown;
+  collections?: unknown;
+  translations?: unknown;
   examples?: unknown;
   example?: unknown;
   example_de?: unknown;

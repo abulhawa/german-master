@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 
 import type { AggregatedWord } from '../scripts/etl/types';
-import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '../shared/content-sources';
+import { B2_BERUF_COLLECTION } from '../shared/content-sources';
 import { setupTestDatabase, type TestDatabaseContext } from './helpers/pg';
 
 describe('canonical vocabulary readiness verification', () => {
@@ -36,7 +36,7 @@ describe('canonical vocabulary readiness verification', () => {
     {
       lemma: 'Arbeitsvertrag',
       pos: 'N',
-      level: 'B2 Beruf',
+      level: 'B2',
       english: 'employment contract',
       exampleDe: 'Der Arbeitsvertrag regelt die Probezeit.',
       exampleEn: 'The employment contract defines the probation period.',
@@ -58,7 +58,7 @@ describe('canonical vocabulary readiness verification', () => {
       posAttributes: null,
       enrichmentAppliedAt: null,
       enrichmentMethod: null,
-      sourcesCsv: ANDROID_B2_BERUF_SOURCE,
+      collections: [B2_BERUF_COLLECTION],
     },
   ];
 
@@ -91,10 +91,10 @@ describe('canonical vocabulary readiness verification', () => {
     await dbContext.pool.query(
       [
         'insert into words',
-        '(lemma, pos, level, english, gender, plural, approved, complete, sources_csv)',
+        '(lemma, pos, level, english, gender, plural, approved, complete, collections)',
         'values',
-        '($1, $2, $3, $4, $5, $6, true, true, $7),',
-        '($8, $9, $10, $11, $12, $13, true, true, $14)',
+        '($1, $2, $3, $4, $5, $6, true, true, $7::jsonb),',
+        '($8, $9, $10, $11, $12, $13, true, true, $14::jsonb)',
       ].join(' '),
       [
         'Projekt',
@@ -103,14 +103,14 @@ describe('canonical vocabulary readiness verification', () => {
         'project',
         'das',
         'Projekte',
-        null,
+        JSON.stringify([]),
         'Arbeitsvertrag',
         'N',
-        'B2 Beruf',
+        'B2',
         'employment contract',
         'der',
         'Arbeitsvertraege',
-        ANDROID_B2_BERUF_SOURCE,
+        JSON.stringify([B2_BERUF_COLLECTION]),
       ],
     );
     resetTaskSpecSync();

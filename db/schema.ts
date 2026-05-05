@@ -51,6 +51,7 @@ export const words = pgTable(
     complete: boolean("complete").default(false).notNull(),
     sourcesCsv: text("sources_csv"),
     sourceNotes: text("source_notes"),
+    collections: jsonb("collections").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     exportUid: uuid("export_uid").default(sql`gen_random_uuid()`).notNull(),
     exportedAt: timestamp("exported_at", { withTimezone: true }),
     translations: jsonb("translations").$type<

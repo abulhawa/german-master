@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { ANDROID_B2_BERUF_SOURCE, ANDROID_B2_BERUF_VERSION } from '@shared/content-sources';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 
 import { aggregateWords, keyFor } from '../../../scripts/seed/loaders/words';
 
@@ -13,12 +13,6 @@ async function setupPosFile(root: string, filename: string, records: unknown[]):
   await fs.mkdir(posDir, { recursive: true });
   const content = records.map((record) => JSON.stringify(record)).join('\n');
   await fs.writeFile(path.join(posDir, filename), `${content}\n`, 'utf8');
-}
-
-async function setupBundledCsv(root: string, rows: string[]): Promise<void> {
-  const csvDir = path.join(root, 'data', 'wortschatz');
-  await fs.mkdir(csvDir, { recursive: true });
-  await fs.writeFile(path.join(csvDir, 'b2-beruf.csv'), `${rows.join('\n')}\n`, 'utf8');
 }
 
 describe('seed loaders', () => {
@@ -98,14 +92,14 @@ describe('seed loaders', () => {
     }
   });
 
-  it('merges bundled Wortschatz source tags onto existing lemma and POS rows', async () => {
+  it('keeps explicit collection metadata from POS JSONL records', async () => {
     const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'seed-loader-bundled-'));
 
     try {
       await setupPosFile(tmpRoot, 'nouns.jsonl', [
         {
           lemma: 'Projekt',
-          level: 'B1',
+          level: 'B2',
           english: 'project',
           noun: { gender: 'das', plural: 'Projekte' },
           examples: [
@@ -114,13 +108,9 @@ describe('seed loaders', () => {
               translations: { en: 'The project needs a clear timeline.' },
             },
           ],
+          collections: [B2_BERUF_COLLECTION],
           approved: true,
         },
-      ]);
-
-      await setupBundledCsv(tmpRoot, [
-        'Article Prefix,Word,English Translation,Example Sentence,English Translation Sentence,POS',
-        'das,"Projekt, Projekte",project,Das Projekt braucht einen klaren Zeitplan.,The project needs a clear timeline.,N',
       ]);
 
       const aggregated = await aggregateWords(tmpRoot);
@@ -129,12 +119,11 @@ describe('seed loaders', () => {
       expect(aggregated[0]).toMatchObject({
         lemma: 'Projekt',
         pos: 'N',
-        level: 'B2 Beruf',
+        level: 'B2',
         english: 'project',
         gender: 'das',
         plural: 'Projekte',
-        sourcesCsv: ANDROID_B2_BERUF_SOURCE,
-        sourceNotes: ANDROID_B2_BERUF_VERSION,
+        collections: [B2_BERUF_COLLECTION],
       });
     } finally {
       await fs.rm(tmpRoot, { recursive: true, force: true });

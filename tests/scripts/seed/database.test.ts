@@ -39,7 +39,7 @@ describe('seed database helpers', () => {
     const database = await import('../../../scripts/seed/database');
 
     await database.ensureLegacySchema(db as any);
-    expect(db.execute).toHaveBeenCalledTimes(1);
+    expect(db.execute).toHaveBeenCalledTimes(5);
   });
 
   it('resets seeded content inside a transaction', async () => {

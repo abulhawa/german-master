@@ -26,8 +26,11 @@
     "enrich:pos": "tsx scripts/enrich-pos-jsonl.ts",
     "seed": "tsx scripts/seed.ts",
     "seed:b2": "tsx scripts/seed-b2-tasks.ts",
+    "migrate:b2-beruf": "tsx scripts/migrate-b2-beruf-to-pos.ts",
+    "reconcile:b2-overlaps": "tsx scripts/reconcile-b2-overlaps.ts",
     "data:export": "tsx scripts/export_verbs_json.ts",
     "verify:canonical-vocabulary": "tsx scripts/canonical-vocabulary-readiness.ts",
+    "validate:csv": "tsx scripts/validate-csv.ts",
     "validate:env": "tsx scripts/validate-env.ts"
   },
   "dependencies": {

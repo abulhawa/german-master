@@ -42,6 +42,7 @@ function toAggregatedWord(word: Word): AggregatedWord {
     posAttributes: word.posAttributes ?? null,
     enrichmentAppliedAt: word.enrichmentAppliedAt ? word.enrichmentAppliedAt.toISOString() : null,
     enrichmentMethod: word.enrichmentMethod ?? null,
+    collections: word.collections ?? [],
   };
 }
 

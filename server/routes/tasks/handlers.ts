@@ -1,7 +1,6 @@
 import type { RequestHandler } from "express";
 import { eq, inArray, or, sql, notInArray, type SQL } from "drizzle-orm";
 import type { LexemePos, TaskGrading, TaskType } from "@shared";
-import { B2_BERUF_COLLECTION } from "@shared/content-sources";
 import {
   db,
   lexemes,
@@ -224,19 +223,10 @@ export function createListTasksHandler(): RequestHandler {
       if (requestedCollections.length > 0) {
         const collectionFilters = requestedCollections.map((requestedCollection) => {
           const collectionJson = JSON.stringify([requestedCollection]);
-          const canonicalCollectionFilter = or(
+          return or(
             sql`coalesce(${lexemes.metadata} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
             sql`coalesce(${taskSpecs.prompt} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
             sql`coalesce(${taskSpecs.metadata} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`,
-          );
-
-          if (requestedCollection !== B2_BERUF_COLLECTION) {
-            return canonicalCollectionFilter;
-          }
-
-          return or(
-            canonicalCollectionFilter,
-            sql`${lexemes.metadata} ->> 'level' = 'B2 Beruf'`,
           );
         });
         const collectionFilter = or(...collectionFilters);

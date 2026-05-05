@@ -1,7 +1,7 @@
 import type { PartOfSpeech } from '@shared';
 import { mapLegacyPartOfSpeechToLexeme } from '@shared/pos-normalizer';
 import { type LexemePos } from '@shared/task-registry';
-import { ANDROID_B2_BERUF_SOURCE, B2_BERUF_COLLECTION } from '@shared/content-sources';
+import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 
 import { generateTaskSpecs, type TaskTemplateSource } from '../../../server/tasks/templates.ts';
 
@@ -380,24 +380,20 @@ function createTaskSourceFromWord(word: AggregatedWord, lexemeId: string): TaskT
 }
 
 function canonicalLevel(word: AggregatedWord): string | null {
-  return hasSourceTag(word, ANDROID_B2_BERUF_SOURCE) || word.level === 'B2 Beruf'
-    ? 'B2'
-    : word.level ?? null;
+  const collections = getCollections(word);
+  if (collections.includes(B2_BERUF_COLLECTION)) {
+    return 'B2';
+  }
+  return word.level ?? null;
 }
 
 function getCollections(word: AggregatedWord): string[] {
-  const collections = new Set<string>();
-  if (hasSourceTag(word, ANDROID_B2_BERUF_SOURCE) || word.level === 'B2 Beruf') {
-    collections.add(B2_BERUF_COLLECTION);
-  }
-  return Array.from(collections).sort();
-}
-
-function hasSourceTag(word: AggregatedWord, source: string): boolean {
-  return (word.sourcesCsv ?? '')
-    .split(';')
-    .map((value) => value.trim())
-    .includes(source);
+  const normalized = Array.isArray(word.collections)
+    ? word.collections
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value): value is string => value.length > 0)
+    : [];
+  return Array.from(new Set(normalized)).sort();
 }
 
 function createInflectionEntries(
