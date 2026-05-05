@@ -99,6 +99,13 @@
       "when": 1760647461783,
       "tag": "0013_add_words_collections",
       "breakpoints": false
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1760647462783,
+      "tag": "0014_add_practice_history_collections",
+      "breakpoints": false
     }
   ]
 }

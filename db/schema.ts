@@ -209,6 +209,7 @@ export const practiceHistory = pgTable(
     submittedAnswer: text("submitted_answer"),
     correctAnswer: text("correct_answer"),
     cefrLevel: text("cefr_level"),
+    collections: jsonb("collections").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     hintsUsed: boolean("hints_used").notNull().default(false),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
