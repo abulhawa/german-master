@@ -275,7 +275,7 @@ function buildTaskSource(
 
   const finder = createInflectionFinder(inflectionRows);
 
-  if (pos === 'verb') {
+  if (pos === 'V') {
     base.praesensIch = finder({
       tense: 'present',
       mood: 'indicative',
@@ -303,12 +303,12 @@ function buildTaskSource(
     });
 
     base.perfekt = base.perfekt ?? finder({ tense: 'perfect' });
-  } else if (pos === 'noun') {
+  } else if (pos === 'N') {
     base.plural = finder({
       case: 'nominative',
       number: 'plural',
     });
-  } else if (pos === 'adjective') {
+  } else if (pos === 'Adj') {
     base.comparative = finder({ degree: 'comparative' });
     base.superlative = finder({ degree: 'superlative' });
   }

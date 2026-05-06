@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const conjugatePromptSchema = z.object({
   lemma: z.string().min(1),
-  pos: z.literal('verb'),
+  pos: z.literal('V'),
   requestedForm: z.object({
     tense: z.enum(['present', 'past', 'participle']),
     mood: z.enum(['indicative', 'subjunctive']).optional(),
@@ -27,7 +27,7 @@ export const conjugateSolutionSchema = z.object({
 
 export const nounDeclensionPromptSchema = z.object({
   lemma: z.string().min(1),
-  pos: z.literal('noun'),
+  pos: z.literal('N'),
   gender: z.enum(['der', 'die', 'das', 'der/die', 'der/das', 'die/das']).optional(),
   requestedCase: z.enum(['nominative', 'accusative', 'dative', 'genitive']),
   requestedNumber: z.enum(['singular', 'plural']),
@@ -48,7 +48,7 @@ export const nounDeclensionSolutionSchema = z.object({
 
 export const adjectiveEndingPromptSchema = z.object({
   lemma: z.string().min(1),
-  pos: z.literal('adjective'),
+  pos: z.literal('Adj'),
   degree: z.enum(['positive', 'comparative', 'superlative']),
   syntacticFrame: z.string().optional(),
   instructions: z.string().min(1),
@@ -80,17 +80,14 @@ export const b2WritingSolutionSchema = z.object({
 export const vocabularyDrillPromptSchema = z.object({
   lemma: z.string().min(1),
   pos: z.enum([
-    'verb',
-    'noun',
-    'adjective',
-    'adverb',
-    'pronoun',
-    'determiner',
-    'preposition',
-    'conjunction',
-    'numeral',
-    'particle',
-    'interjection',
+    'V',
+    'N',
+    'Adj',
+    'Adv',
+    'Pron',
+    'Präp',
+    'Konj',
+    'Part',
   ]),
   cefrLevel: z.string().optional(),
   collections: z.array(z.string().min(1)).optional(),
@@ -109,17 +106,14 @@ export const vocabularyDrillSolutionSchema = z.object({
 });
 
 export type LexemePos =
-  | 'verb'
-  | 'noun'
-  | 'adjective'
-  | 'adverb'
-  | 'pronoun'
-  | 'determiner'
-  | 'preposition'
-  | 'conjunction'
-  | 'numeral'
-  | 'particle'
-  | 'interjection';
+  | 'V'
+  | 'N'
+  | 'Adj'
+  | 'Adv'
+  | 'Pron'
+  | 'Präp'
+  | 'Konj'
+  | 'Part';
 
 export type TaskInteractionMode = 'choice' | 'typed' | 'self_grade' | 'writing';
 export type TaskGrading =
@@ -144,7 +138,7 @@ interface TaskRegistryEntryBase {
 export const taskTypeRegistry = {
   conjugate_form: {
     taskType: 'conjugate_form',
-    supportedPos: ['verb'],
+    supportedPos: ['V'],
     renderer: 'conjugate_form',
     interactionMode: 'typed',
     grading: { type: 'system' },
@@ -154,7 +148,7 @@ export const taskTypeRegistry = {
   },
   noun_case_declension: {
     taskType: 'noun_case_declension',
-    supportedPos: ['noun'],
+    supportedPos: ['N'],
     renderer: 'noun_case_declension',
     interactionMode: 'typed',
     grading: { type: 'system' },
@@ -164,7 +158,7 @@ export const taskTypeRegistry = {
   },
   adj_ending: {
     taskType: 'adj_ending',
-    supportedPos: ['adjective'],
+    supportedPos: ['Adj'],
     renderer: 'adj_ending',
     interactionMode: 'typed',
     grading: { type: 'system' },
@@ -174,7 +168,7 @@ export const taskTypeRegistry = {
   },
   b2_writing_prompt: {
     taskType: 'b2_writing_prompt',
-    supportedPos: ['verb', 'adjective', 'noun'],
+    supportedPos: ['V', 'Adj', 'N'],
     renderer: 'b2_writing_prompt',
     interactionMode: 'writing',
     grading: { type: 'system' },
@@ -185,17 +179,14 @@ export const taskTypeRegistry = {
   vocabulary_drill: {
     taskType: 'vocabulary_drill',
     supportedPos: [
-      'verb',
-      'noun',
-      'adjective',
-      'adverb',
-      'pronoun',
-      'determiner',
-      'preposition',
-      'conjunction',
-      'numeral',
-      'particle',
-      'interjection',
+      'V',
+      'N',
+      'Adj',
+      'Adv',
+      'Pron',
+      'Präp',
+      'Konj',
+      'Part',
     ],
     renderer: 'word_card',
     interactionMode: 'self_grade',

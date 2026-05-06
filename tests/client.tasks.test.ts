@@ -10,7 +10,7 @@ import { taskTypeRegistry } from '@shared/task-registry';
 
 const conjugatePrompt = {
   lemma: 'sein',
-  pos: 'verb',
+  pos: 'V',
   requestedForm: {
     tense: 'present',
     person: 1,
@@ -46,7 +46,7 @@ describe('fetchPracticeTasks', () => {
           taskId: 'task-1',
           taskType: 'conjugate_form',
           renderer: 'conjugate_form',
-          pos: 'verb',
+          pos: 'V',
           prompt: conjugatePrompt,
           solution: conjugateSolution,
           queueCap: 30,
@@ -72,7 +72,7 @@ describe('fetchPracticeTasks', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    const tasks = await fetchPracticeTasks({ pos: 'verb', taskType: 'conjugate_form', limit: 10 });
+    const tasks = await fetchPracticeTasks({ pos: 'V', taskType: 'conjugate_form', limit: 10 });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(tasks).toHaveLength(1);
@@ -103,7 +103,7 @@ describe('fetchPracticeTasks', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    await fetchPracticeTasks({ pos: 'verb', taskType: 'conjugate_form', limit: 5 });
+    await fetchPracticeTasks({ pos: 'V', taskType: 'conjugate_form', limit: 5 });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = new URL(requestToUrl(fetchMock.mock.calls[0]![0]!));
@@ -121,7 +121,7 @@ describe('fetchPracticeTasks', () => {
 
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(fetchPracticeTasks({ pos: 'verb', limit: 1 })).rejects.toThrow('Task feed responded with status 502');
+    await expect(fetchPracticeTasks({ pos: 'V', limit: 1 })).rejects.toThrow('Task feed responded with status 502');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -139,7 +139,7 @@ describe('fetchPracticeTasksByType', () => {
             taskId: 'task-1',
             taskType: 'conjugate_form',
             renderer: 'conjugate_form',
-            pos: 'verb',
+            pos: 'V',
             prompt: conjugatePrompt,
             solution: conjugateSolution,
             queueCap: 30,
@@ -151,10 +151,10 @@ describe('fetchPracticeTasksByType', () => {
             taskId: 'task-2',
             taskType: 'noun_case_declension',
             renderer: 'noun_case_declension',
-            pos: 'noun',
+            pos: 'N',
             prompt: {
               lemma: 'Haus',
-              pos: 'noun',
+              pos: 'N',
               gender: 'das',
               requestedCase: 'nominative',
               requestedNumber: 'singular',
@@ -246,10 +246,10 @@ describe('fetchPracticeTasksByType', () => {
             positive: ['known', 'remembered'],
             negative: ['forgot', 'not_known'],
           },
-          pos: 'noun',
+          pos: 'N',
           prompt: {
             lemma: 'Arbeitsvertrag',
-            pos: 'noun',
+            pos: 'N',
             cefrLevel: 'B2',
             collections: ['b2_beruf'],
             instructions: 'Review the meaning of "Arbeitsvertrag".',

@@ -95,20 +95,7 @@ export async function inspectCanonicalVocabularyReadiness(): Promise<CanonicalVo
         from words w
         left join lexemes l
           on lower(l.lemma) = lower(w.lemma)
-         and l.pos = case w.pos
-          when 'V' then 'verb'
-          when 'N' then 'noun'
-          when 'Adj' then 'adjective'
-          when 'Adv' then 'adverb'
-          when 'Pron' then 'pronoun'
-          when 'Det' then 'determiner'
-          when 'Präp' then 'preposition'
-          when 'Konj' then 'conjunction'
-          when 'Num' then 'numeral'
-          when 'Part' then 'particle'
-          when 'Interj' then 'interjection'
-          else null
-         end
+         and l.pos = w.pos
       )
       select
         (select count(*) from task_specs where task_type = 'vocabulary_drill') as vocabulary_task_spec_count,

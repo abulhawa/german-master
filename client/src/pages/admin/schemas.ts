@@ -24,7 +24,7 @@ export type WordFormState = z.infer<typeof wordFormSchema>;
 
 export const createWordFormSchema = wordFormSchema.extend({
   lemma: z.string(),
-  pos: z.enum(['V', 'N', 'Adj', 'Adv', 'Pron', 'Det', 'Pr\u00e4p', 'Konj', 'Num', 'Part', 'Interj']),
+  pos: z.enum(['Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part']),
 });
 
 export type CreateWordFormState = z.infer<typeof createWordFormSchema>;

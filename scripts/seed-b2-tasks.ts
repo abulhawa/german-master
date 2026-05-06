@@ -6,7 +6,7 @@ import { sql } from 'drizzle-orm'
 import { db, getPool, inflections, lexemes, taskSpecs } from '@db'
 import type { LexemePos } from '@shared'
 
-type B2LexemePos = Extract<LexemePos, 'verb' | 'noun' | 'adjective'>
+type B2LexemePos = Extract<LexemePos, 'V' | 'N' | 'Adj'>
 
 interface B2Scenario {
   key: string
@@ -26,7 +26,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'formal-work-email',
     lemma: 'antworten',
-    pos: 'verb',
+    pos: 'V',
     english: 'to respond',
     scenario:
       'Ihre Teamleitung bittet um eine formelle Antwort auf eine Kundenanfrage zum Projektstatus.',
@@ -40,7 +40,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'polite-complaint',
     lemma: 'beschweren',
-    pos: 'verb',
+    pos: 'V',
     english: 'to complain',
     scenario:
       'Eine Lieferung ist deutlich verspaetet angekommen und Sie muessen eine sachliche Beschwerde senden.',
@@ -54,7 +54,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'meeting-opinion',
     lemma: 'meinung',
-    pos: 'noun',
+    pos: 'N',
     gender: 'die',
     english: 'opinion',
     scenario:
@@ -69,7 +69,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'professional-clarification',
     lemma: 'klaeren',
-    pos: 'verb',
+    pos: 'V',
     english: 'to clarify',
     scenario:
       'Sie brauchen vor einem Kundentermin eine praezise Klaerung zu den vertraglichen Rahmenbedingungen.',
@@ -83,7 +83,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'polite-decline',
     lemma: 'bedauerlich',
-    pos: 'adjective',
+    pos: 'Adj',
     english: 'regrettable',
     scenario:
       'Sie muessen eine Anfrage ablehnen, ohne die Geschaeftsbeziehung zu belasten.',
@@ -97,7 +97,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'propose-solution',
     lemma: 'vorschlagen',
-    pos: 'verb',
+    pos: 'V',
     english: 'to propose',
     scenario:
       'Im Projekt tritt ein Engpass auf und Sie sollen eine realistische Loesung im Teamchat formulieren.',
@@ -111,7 +111,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'formal-process-description',
     lemma: 'prozess',
-    pos: 'noun',
+    pos: 'N',
     gender: 'der',
     english: 'process',
     scenario:
@@ -126,7 +126,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'formal-apology',
     lemma: 'entschuldigen',
-    pos: 'verb',
+    pos: 'V',
     english: 'to apologize',
     scenario:
       'Ein Fehler im Bericht fuehrte zu Verwirrung. Sie sollen sich professionell entschuldigen.',
@@ -140,7 +140,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'formal-information-request',
     lemma: 'erfragen',
-    pos: 'verb',
+    pos: 'V',
     english: 'to request information',
     scenario:
       'Sie benoetigen belastbare Zahlen fuer einen Bericht und schreiben an eine externe Partnerfirma.',
@@ -154,7 +154,7 @@ export const B2_SCENARIOS: B2Scenario[] = [
   {
     key: 'meeting-summary-outcome',
     lemma: 'zusammenfassen',
-    pos: 'verb',
+    pos: 'V',
     english: 'to summarize',
     scenario:
       'Nach einer Besprechung sollen Sie die zentralen Ergebnisse an alle Beteiligten senden.',
@@ -189,10 +189,10 @@ function toTaskSpecId(key: string): string {
 }
 
 function buildFeaturesForPos(pos: B2LexemePos): Record<string, unknown> {
-  if (pos === 'verb') {
+  if (pos === 'V') {
     return { tense: 'infinitive', mood: 'indicative' }
   }
-  if (pos === 'noun') {
+  if (pos === 'N') {
     return { case: 'nominative', number: 'singular' }
   }
   return { degree: 'positive' }

@@ -55,7 +55,7 @@ function buildKaikkiNounJsonl({
   return `${JSON.stringify({
     word: lemma,
     lang: 'German',
-    pos: 'noun',
+    pos: 'N',
     forms: [
       {
         form: plural,

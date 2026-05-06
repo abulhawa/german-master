@@ -82,7 +82,7 @@ export const words = pgTable(
     uniqueIndex("words_lemma_pos_idx").on(table.lemma, table.pos),
     check(
       "words_pos_normalized_chk",
-      sql`${table.pos} IN ('V', 'N', 'Adj', 'Adv', 'Pron', 'Det', 'Pr\u00e4p', 'Konj', 'Num', 'Part', 'Interj')`,
+      sql`${table.pos} IN ('Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part')`,
     ),
   ],
 );
@@ -113,7 +113,7 @@ export const lexemes = pgTable(
     uniqueIndex("lexemes_lemma_pos_idx").on(table.lemma, table.pos),
     check(
       "lexemes_pos_normalized_chk",
-      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+      sql`${table.pos} IN ('Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part')`,
     ),
   ],
 );
@@ -172,7 +172,7 @@ export const taskSpecs = pgTable(
     index("task_specs_pos_idx").on(table.pos),
     check(
       "task_specs_pos_normalized_chk",
-      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+      sql`${table.pos} IN ('Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part')`,
     ),
   ],
 );
@@ -222,7 +222,7 @@ export const practiceHistory = pgTable(
     index("practice_history_user_idx").on(table.userId),
     check(
       "practice_history_pos_normalized_chk",
-      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+      sql`${table.pos} IN ('Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part')`,
     ),
   ],
 );
@@ -256,7 +256,7 @@ export const practiceLog = pgTable(
     uniqueIndex("practice_log_device_task_idx").on(table.taskId, table.deviceId, table.cefrLevel),
     check(
       "practice_log_pos_normalized_chk",
-      sql`${table.pos} IN ('verb', 'noun', 'adjective', 'adverb', 'pronoun', 'determiner', 'preposition', 'conjunction', 'numeral', 'particle', 'interjection')`,
+      sql`${table.pos} IN ('Pr\u00e4p', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part')`,
     ),
   ],
 );

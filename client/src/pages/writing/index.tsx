@@ -104,8 +104,8 @@ export default function WritingPage() {
   const resolveLevelForPos = useCallback(
     (pos: LexemePos): CEFRLevel => {
       const fallbackLevel: CEFRLevel =
-        settings.cefrLevelByPos.verb ?? settings.legacyVerbLevel ?? 'A1';
-      if (pos === 'verb') {
+        settings.cefrLevelByPos.V ?? settings.legacyVerbLevel ?? 'A1';
+      if (pos === 'V') {
         return fallbackLevel;
       }
       return settings.cefrLevelByPos[pos] ?? fallbackLevel;

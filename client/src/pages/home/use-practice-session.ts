@@ -68,7 +68,7 @@ export async function fetchTasksForActiveTypes({
   const taskLevels = taskTypes.map((taskType) => {
     const entry = clientTaskRegistry[taskType];
     const pos = entry?.supportedPos[0];
-    return pos ? resolveLevelForPos(pos) : resolveLevelForPos('verb');
+    return pos ? resolveLevelForPos(pos) : resolveLevelForPos('V');
   });
   const resolvedLevel = levelOverride && levelOverride.length > 0 ? levelOverride : taskLevels;
 

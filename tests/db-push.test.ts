@@ -54,13 +54,13 @@ describe('applyMigrations', () => {
     );
 
     await pool.query(
-      "insert into lexemes (id, lemma, language, pos, source_ids, metadata) values ($1, $2, 'de', 'verb', $3::jsonb, $4::jsonb)",
+      "insert into lexemes (id, lemma, language, pos, source_ids, metadata) values ($1, $2, 'de', 'V', $3::jsonb, $4::jsonb)",
       ['lex:1', 'gehen', '[]', '{}'],
     );
 
     await expect(
       pool.query(
-        "insert into lexemes (id, lemma, language, pos, source_ids, metadata) values ($1, $2, 'de', 'verb', $3::jsonb, $4::jsonb)",
+        "insert into lexemes (id, lemma, language, pos, source_ids, metadata) values ($1, $2, 'de', 'V', $3::jsonb, $4::jsonb)",
         ['lex:2', 'gehen', '[]', '{}'],
       ),
     ).rejects.toThrow(/unique/i);
@@ -75,7 +75,7 @@ describe('applyMigrations', () => {
     await pool.query(
       [
         "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",
-        "values ($1, $2, 'verb', 'conjugate_form', 'conjugate_form', $3::jsonb, $4::jsonb)",
+        "values ($1, $2, 'V', 'conjugate_form', 'conjugate_form', $3::jsonb, $4::jsonb)",
       ].join(' '),
       ['task:1', 'lex:1', '{}', '{"form":"gehe"}'],
     );

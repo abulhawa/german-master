@@ -1,6 +1,7 @@
 import { resolveLocalStorage } from '@/lib/storage';
 import type { PracticeSettingsRendererPreferences, PracticeSettingsState, TaskType } from '@shared';
 import type { CEFRLevel, LexemePos } from '@shared';
+import { normaliseLexemePartOfSpeech } from '@shared/pos-normalizer';
 
 const STORAGE_KEY = 'practice.settings';
 const LEGACY_STORAGE_KEY = 'settings';
@@ -25,7 +26,7 @@ export function createDefaultSettings(): PracticeSettingsState {
     defaultTaskType: 'conjugate_form',
     preferredTaskTypes: ['conjugate_form'],
     b2ExamMode: false,
-    cefrLevelByPos: { verb: 'A1' },
+    cefrLevelByPos: { V: 'A1' },
     rendererPreferences: {
       conjugate_form: { ...DEFAULT_RENDERER_PREFS },
       noun_case_declension: { ...DEFAULT_RENDERER_PREFS },
@@ -60,7 +61,7 @@ function migrateLegacySettings(storage: Storage): PracticeSettingsState {
   const defaults = createDefaultSettings();
 
   if (legacy) {
-    defaults.cefrLevelByPos = { ...defaults.cefrLevelByPos, verb: legacy.level };
+    defaults.cefrLevelByPos = { ...defaults.cefrLevelByPos, V: legacy.level };
     defaults.legacyVerbLevel = legacy.level;
     defaults.rendererPreferences = {
       ...defaults.rendererPreferences,
@@ -96,6 +97,17 @@ function parseSettings(raw: string): PracticeSettingsState | null {
   }
 }
 
+function normaliseCefrLevelByPos(value: PracticeSettingsState['cefrLevelByPos']): PracticeSettingsState['cefrLevelByPos'] {
+  const result: PracticeSettingsState['cefrLevelByPos'] = {};
+  for (const [rawPos, level] of Object.entries(value ?? {})) {
+    const pos = normaliseLexemePartOfSpeech(rawPos);
+    if (pos && level) {
+      result[pos] = level;
+    }
+  }
+  return result;
+}
+
 function normaliseSettings(parsed: PracticeSettingsState): PracticeSettingsState {
   const defaults = createDefaultSettings();
   const availableTaskTypes = new Set<TaskType>([
@@ -117,6 +129,10 @@ function normaliseSettings(parsed: PracticeSettingsState): PracticeSettingsState
     defaultTaskType,
     preferredTaskTypes: preferredTaskTypes.length > 0 ? preferredTaskTypes : [defaultTaskType],
     b2ExamMode: parsed.b2ExamMode === true,
+    cefrLevelByPos: {
+      ...defaults.cefrLevelByPos,
+      ...normaliseCefrLevelByPos(parsed.cefrLevelByPos),
+    },
     rendererPreferences: {
       ...defaults.rendererPreferences,
       ...(parsed.rendererPreferences ?? {}),
@@ -204,7 +220,7 @@ export function updateCefrLevel(
       ...state.cefrLevelByPos,
       [input.pos]: input.level,
     },
-    legacyVerbLevel: input.pos === 'verb' ? input.level : state.legacyVerbLevel,
+    legacyVerbLevel: input.pos === 'V' ? input.level : state.legacyVerbLevel,
     updatedAt: new Date().toISOString(),
   };
 }

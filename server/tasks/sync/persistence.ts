@@ -101,9 +101,7 @@ export async function fetchLexemeRows(
     .from(lexemes)
     .leftJoin(
       words,
-      sql`lower(${words.lemma}) = lower(${lexemes.lemma}) AND ${words.pos} = ${mapLexemePosToWordPosSql(
-        lexemes.pos,
-      )}`,
+      sql`lower(${words.lemma}) = lower(${lexemes.lemma}) AND ${words.pos} = ${lexemes.pos}`,
     );
 
   if (lexemeIds) {
@@ -199,20 +197,4 @@ export async function deleteTaskSpecsById(ids: readonly string[]): Promise<void>
 
   const db = getDb();
   await db.delete(taskSpecs).where(inArray(taskSpecs.id, ids as string[]));
-}
-
-function mapLexemePosToWordPosSql(column: typeof lexemes.pos) {
-  return sql`case ${column}
-    when 'verb' then 'V'
-    when 'noun' then 'N'
-    when 'adjective' then 'Adj'
-    when 'adverb' then 'Adv'
-    when 'pronoun' then 'Pron'
-    when 'determiner' then 'Det'
-    when 'preposition' then 'Pr\u00e4p'
-    when 'conjunction' then 'Konj'
-    when 'numeral' then 'Num'
-    when 'particle' then 'Part'
-    when 'interjection' then 'Interj'
-    else '' end`;
 }

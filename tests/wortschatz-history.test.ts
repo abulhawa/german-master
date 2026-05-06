@@ -61,16 +61,16 @@ describe('Wortschatz history summary API', () => {
     await dbContext.pool.query(
       [
         'insert into lexemes (id, lemma, language, pos, metadata)',
-        "values ('lex-1', 'Arbeitsvertrag', 'de', 'noun', '{\"collections\":[\"b2_beruf\"]}'::jsonb),",
-        "('lex-2', 'Projekt', 'de', 'noun', '{\"collections\":[]}'::jsonb)",
+        "values ('lex-1', 'Arbeitsvertrag', 'de', 'N', '{\"collections\":[\"b2_beruf\"]}'::jsonb),",
+        "('lex-2', 'Projekt', 'de', 'N', '{\"collections\":[]}'::jsonb)",
       ].join(' '),
     );
 
     await dbContext.pool.query(
       [
         "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",
-        "values ('task-1', 'lex-1', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}'),",
-        "('task-3', 'lex-2', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}')",
+        "values ('task-1', 'lex-1', 'N', 'vocabulary_drill', 'word_card', '{}', '{}'),",
+        "('task-3', 'lex-2', 'N', 'vocabulary_drill', 'word_card', '{}', '{}')",
       ].join(" "),
     );
 
@@ -79,10 +79,10 @@ describe('Wortschatz history summary API', () => {
         'insert into practice_history',
         '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
         'values',
-        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 700, now()),",
-        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'incorrect', 'missed', 'known', 800, now()),",
-        "('user-123', 'task-3', 'lex-2', 'Projekt', 'noun', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 900, now()),",
-        "('other-user', 'task-1', 'lex-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-2', 'correct', 'known', 'known', 900, now())",
+        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 700, now()),",
+        "('user-123', 'task-1', 'lex-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-1', 'incorrect', 'missed', 'known', 800, now()),",
+        "('user-123', 'task-3', 'lex-2', 'Projekt', 'N', 'vocabulary_drill', 'word_card', 'device-1', 'correct', 'known', 'known', 900, now()),",
+        "('other-user', 'task-1', 'lex-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-2', 'correct', 'known', 'known', 900, now())",
       ].join(' '),
     );
 
@@ -105,7 +105,7 @@ describe('Wortschatz history summary API', () => {
     });
   });
 
-  it('aggregates signed-in Android Wortschatz attempts with normalized POS codes', async () => {
+  it('aggregates signed-in Android Wortschatz attempts with compact POS codes', async () => {
     if (!dbContext) {
       throw new Error('test database not initialised');
     }
@@ -128,14 +128,14 @@ describe('Wortschatz history summary API', () => {
     await dbContext.pool.query(
       [
         'insert into lexemes (id, lemma, language, pos, metadata)',
-        "values ('lex-android-1', 'Arbeitsvertrag', 'de', 'noun', '{\"collections\":[\"b2_beruf\"]}'::jsonb)",
+        "values ('lex-android-1', 'Arbeitsvertrag', 'de', 'N', '{\"collections\":[\"b2_beruf\"]}'::jsonb)",
       ].join(' '),
     );
 
     await dbContext.pool.query(
       [
         "insert into task_specs (id, lexeme_id, pos, task_type, renderer, prompt, solution)",
-        "values ('task-android-1', 'lex-android-1', 'noun', 'vocabulary_drill', 'word_card', '{}', '{}')",
+        "values ('task-android-1', 'lex-android-1', 'N', 'vocabulary_drill', 'word_card', '{}', '{}')",
       ].join(" "),
     );
 
@@ -144,8 +144,8 @@ describe('Wortschatz history summary API', () => {
         'insert into practice_history',
         '(user_id, task_id, lexeme_id, lemma, pos, task_type, renderer, device_id, result, submitted_answer, correct_answer, response_ms, submitted_at)',
         'values',
-        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
-        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'noun', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
+        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'correct', 'Arbeitsvertrag', 'Arbeitsvertrag', 700, now()),",
+        "('user-android-pos', 'task-android-1', 'lex-android-1', 'Arbeitsvertrag', 'N', 'vocabulary_drill', 'word_card', 'device-android', 'incorrect', '', 'Arbeitsvertrag', 800, now())",
       ].join(' '),
     );
 

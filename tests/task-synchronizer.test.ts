@@ -135,7 +135,7 @@ describe('task synchronizer delta sync', () => {
     await drizzleDb.insert(taskSpecsTable).values({
       id: taskId,
       lexemeId,
-      pos: 'verb',
+      pos: 'V',
       taskType: 'b2_writing_prompt',
       renderer: 'b2_writing_prompt',
       prompt: {
@@ -366,7 +366,7 @@ describe('task synchronizer delta sync', () => {
     await drizzleDb.insert(taskSpecsTable).values({
       id: legacyTaskId,
       lexemeId: targetLexemeId,
-      pos: 'verb',
+      pos: 'V',
       taskType: revisionOneTask!.taskType,
       renderer: 'conjugate_form',
       prompt: { instructions: 'legacy prompt' },
@@ -457,7 +457,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'conjunction', metadata: { level: 'A1' }, updatedAt: updatedTimestamp })
+      .set({ pos: 'Konj', metadata: { level: 'A1' }, updatedAt: updatedTimestamp })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();
@@ -492,7 +492,7 @@ describe('task synchronizer delta sync', () => {
 
     await drizzleDb
       .update(lexemesTable)
-      .set({ pos: 'conjunction', metadata: { level: 'A1' }, updatedAt: new Date(Date.now() + 1000) })
+      .set({ pos: 'Konj', metadata: { level: 'A1' }, updatedAt: new Date(Date.now() + 1000) })
       .where(eq(lexemesTable.id, targetLexemeId));
 
     resetTaskSpecSync();

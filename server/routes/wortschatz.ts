@@ -31,56 +31,6 @@ interface WortschatzHistorySummary {
 
 let cachedDatasetVersion: { signature: string; version: string } | null = null;
 
-function mapHistoryPosToWordPosSql(column: unknown) {
-  return sql`case lower(${column})
-    when 'v' then 'V'
-    when 'verb' then 'V'
-    when 'n' then 'N'
-    when 'noun' then 'N'
-    when 'adj' then 'Adj'
-    when 'adjective' then 'Adj'
-    when 'adv' then 'Adv'
-    when 'adverb' then 'Adv'
-    when 'pron' then 'Pron'
-    when 'pronoun' then 'Pron'
-    when 'det' then 'Det'
-    when 'determiner' then 'Det'
-    when 'art' then 'Det'
-    when 'prep' then 'Präp'
-    when 'präp' then 'Präp'
-    when 'prã¤p' then 'Präp'
-    when 'prãƒâ¤p' then 'Präp'
-    when 'praep' then 'Präp'
-    when 'preposition' then 'Präp'
-    when 'konj' then 'Konj'
-    when 'conj' then 'Konj'
-    when 'conjunction' then 'Konj'
-    when 'num' then 'Num'
-    when 'numeral' then 'Num'
-    when 'part' then 'Part'
-    when 'particle' then 'Part'
-    when 'int' then 'Interj'
-    when 'interj' then 'Interj'
-    when 'interjection' then 'Interj'
-    else '' end`;
-}
-
-function mapWordPosToLexemePosSql(column: unknown) {
-  return sql`case ${column}
-    when 'V' then 'verb'
-    when 'N' then 'noun'
-    when 'Adj' then 'adjective'
-    when 'Adv' then 'adverb'
-    when 'Pron' then 'pronoun'
-    when 'Det' then 'determiner'
-    when 'Präp' then 'preposition'
-    when 'Konj' then 'conjunction'
-    when 'Num' then 'numeral'
-    when 'Part' then 'particle'
-    when 'Interj' then 'interjection'
-    else '' end`;
-}
-
 function collectionFilterOnLexemeMetadata(metadataColumn: unknown) {
   const collectionJson = JSON.stringify([B2_BERUF_COLLECTION]);
   return sql`coalesce(${metadataColumn} -> 'collections', '[]'::jsonb) @> ${collectionJson}::jsonb`;
@@ -202,7 +152,7 @@ export function createWortschatzRouter(): Router {
         .innerJoin(
           lexemes,
           sql`lower(${words.lemma}) = lower(${lexemes.lemma})
-            AND ${lexemes.pos} = ${mapWordPosToLexemePosSql(words.pos)}`,
+            AND ${lexemes.pos} = ${words.pos}`,
         )
         .where(collectionFilterOnLexemeMetadata(lexemes.metadata))
         .orderBy(sql`lower(${words.lemma})`, asc(words.id));
@@ -255,7 +205,7 @@ export function createWortschatzRouter(): Router {
         .innerJoin(
           words,
           sql`lower(${words.lemma}) = lower(coalesce(${practiceHistory.lemma}, ${lexemes.lemma}))
-            AND ${words.pos} = ${mapHistoryPosToWordPosSql(practiceHistory.pos)}`,
+            AND ${words.pos} = ${practiceHistory.pos}`,
         )
         .where(
           sql`${identityFilter} AND ${collectionFilterOnLexemeMetadata(lexemes.metadata)}`,

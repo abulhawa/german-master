@@ -106,6 +106,13 @@
       "when": 1760647462783,
       "tag": "0014_add_practice_history_collections",
       "breakpoints": false
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1760647463783,
+      "tag": "0015_compact_pos_values",
+      "breakpoints": false
     }
   ]
 }

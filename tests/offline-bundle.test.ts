@@ -27,7 +27,7 @@ const baseQueueItem: PracticeTaskQueueItem = {
   taskId: 'task:de:noun:haus:queue-test',
   lexemeId: 'lex:de:noun:haus',
   taskType: 'noun_case_declension',
-  pos: 'noun',
+  pos: 'N',
   renderer: 'noun_case_declension',
     source: 'seed',
   enqueuedAt: new Date().toISOString(),
@@ -92,7 +92,7 @@ describe('offline practice bundle', () => {
     const answerEntry = createAnswerHistoryEntry({
       task: {
         ...baseQueueItem,
-        prompt: { lemma: 'Haus', pos: 'noun', requestedCase: 'dative', requestedNumber: 'singular', instructions: 'Dativ' },
+        prompt: { lemma: 'Haus', pos: 'N', requestedCase: 'dative', requestedNumber: 'singular', instructions: 'Dativ' },
         expectedSolution: { form: 'dem Haus' },
         queueCap: 10,
         lexeme: { id: baseQueueItem.lexemeId, lemma: 'Haus', metadata: { level: 'A2' } },

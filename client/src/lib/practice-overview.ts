@@ -151,7 +151,7 @@ export function buildCefrLabel(
       continue;
     }
     const pos = registryEntry.supportedPos[0];
-    const level = settings.cefrLevelByPos[pos] ?? (pos === 'verb' ? settings.legacyVerbLevel ?? 'A1' : 'A1');
+    const level = settings.cefrLevelByPos[pos] ?? (pos === 'V' ? settings.legacyVerbLevel ?? 'A1' : 'A1');
     if (!entries.has(pos)) {
       entries.set(pos, level ?? 'A1');
     }
@@ -162,29 +162,29 @@ export function buildCefrLabel(
   if (entries.size === 1) {
     const [entry] = Array.from(entries.entries());
     const [pos, level] = entry;
-    const posLabel = pos === 'verb' ? 'Verb' : pos === 'noun' ? 'Noun' : 'Adjective';
+    const posLabel = pos === 'V' ? 'Verb' : pos === 'N' ? 'Noun' : 'Adjective';
     return `${posLabel} level ${level}`;
   }
   return Array.from(entries.entries())
     .map(([pos, level]) => {
-      const posLabel = pos === 'verb' ? 'Verb' : pos === 'noun' ? 'Noun' : 'Adjective';
+      const posLabel = pos === 'V' ? 'Verb' : pos === 'N' ? 'Noun' : 'Adjective';
       return `${posLabel} ${level}`;
     })
     .join(' · ');
 }
 
 export function getVerbLevel(settings: PracticeSettingsState): CEFRLevel {
-  return settings.cefrLevelByPos.verb ?? settings.legacyVerbLevel ?? 'A1';
+  return settings.cefrLevelByPos.V ?? settings.legacyVerbLevel ?? 'A1';
 }
 
-const PRACTICE_SCOPE_KEY_ORDER: LexemePos[] = ['verb', 'noun', 'adjective'];
+const PRACTICE_SCOPE_KEY_ORDER: LexemePos[] = ['V', 'N', 'Adj'];
 
 export function buildPracticeSessionScopeKey(settings: PracticeSettingsState): string {
   const levels: Partial<Record<LexemePos, CEFRLevel>> = {
     ...settings.cefrLevelByPos,
   };
-  if (!levels.verb && settings.legacyVerbLevel) {
-    levels.verb = settings.legacyVerbLevel;
+  if (!levels.V && settings.legacyVerbLevel) {
+    levels.V = settings.legacyVerbLevel;
   }
 
   const segments = PRACTICE_SCOPE_KEY_ORDER.map((pos) => {

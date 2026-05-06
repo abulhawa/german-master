@@ -11,7 +11,7 @@ function createHistoryEntry(level: string): AnsweredQuestion {
     taskId: `task-${level}`,
     lexemeId: `lexeme-${level}`,
     taskType: "conjugate_form",
-    pos: "verb",
+    pos: "V",
     renderer: "conjugate-form",
     result: "correct",
     submittedResponse: "ging",
@@ -25,7 +25,7 @@ function createHistoryEntry(level: string): AnsweredQuestion {
     lexeme: {
       id: `lexeme-${level}`,
       lemma: "gehen",
-      pos: "verb",
+      pos: "V",
       level: level as NonNullable<AnsweredQuestion["lexeme"]>["level"],
     },
   };

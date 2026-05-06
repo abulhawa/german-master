@@ -145,7 +145,7 @@ export function AnsweredQuestionsPanel({
                 ? ({
                     id: `legacy:verb:${verb.infinitive}`,
                     lemma: verb.infinitive,
-                    pos: "verb",
+                    pos: "V",
                     level: verb.level,
                     english: verb.english,
                     example: verb.präteritumExample ? { de: verb.präteritumExample } : undefined,

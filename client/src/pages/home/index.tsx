@@ -134,8 +134,8 @@ export default function Home() {
   const resolveLevelForPos = useCallback(
     (pos: LexemePos): CEFRLevel => {
       const fallbackLevel: CEFRLevel =
-        settings.cefrLevelByPos.verb ?? settings.legacyVerbLevel ?? 'A1';
-      if (pos === 'verb') {
+        settings.cefrLevelByPos.V ?? settings.legacyVerbLevel ?? 'A1';
+      if (pos === 'V') {
         return fallbackLevel;
       }
       return settings.cefrLevelByPos[pos] ?? fallbackLevel;
@@ -275,7 +275,7 @@ export default function Home() {
           return prev;
         }
         didChangeLevel = true;
-        return updateCefrLevel(prev, { pos: 'verb', level });
+        return updateCefrLevel(prev, { pos: 'V', level });
       });
       if (didChangeLevel) {
         requestQueueReload();

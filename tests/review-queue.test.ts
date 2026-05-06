@@ -7,7 +7,7 @@ describe('review queue expiration', () => {
     taskId: 'task:base',
     lexemeId: 'lexeme:base',
     taskType: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     renderer: 'conjugate_form',
     source: 'review',
     enqueuedAt: new Date().toISOString(),

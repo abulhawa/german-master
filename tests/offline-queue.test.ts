@@ -7,7 +7,7 @@ const basePayload: Omit<TaskAttemptPayload, 'deviceId'> = {
   taskId: 'legacy:verb:sein',
   lexemeId: 'legacy:verb:sein',
   taskType: 'conjugate_form',
-  pos: 'verb',
+  pos: 'V',
   renderer: 'conjugate_form',
   result: 'correct',
   submittedResponse: 'war',
@@ -28,7 +28,7 @@ const nounPayload: Omit<TaskAttemptPayload, 'deviceId'> = {
   taskId: 'task:de:noun:kind:dative',
   lexemeId: 'lex:de:noun:kind',
   taskType: 'noun_case_declension',
-  pos: 'noun',
+  pos: 'N',
   renderer: 'noun_case_declension',
   result: 'correct',
   submittedResponse: 'den Kindern',
@@ -42,7 +42,7 @@ const adjectivePayload: Omit<TaskAttemptPayload, 'deviceId'> = {
   taskId: 'task:de:adjective:stark',
   lexemeId: 'lex:de:adjective:stark',
   taskType: 'adjective_declension',
-  pos: 'adjective',
+  pos: 'Adj',
   renderer: 'adjective_declension',
   result: 'incorrect',
   submittedResponse: 'starke',
@@ -86,7 +86,7 @@ describe('offline queue', () => {
     expect(attempts).toHaveLength(1);
     const payload = attempts[0]?.payload;
     expect(payload?.taskType).toBe('noun_case_declension');
-    expect(payload?.pos).toBe('noun');
+    expect(payload?.pos).toBe('N');
     expect(payload?.submittedResponse).toBe('den Kindern');
     expect(payload?.expectedResponse).toEqual({ form: 'Kindern', article: 'den' });
   });

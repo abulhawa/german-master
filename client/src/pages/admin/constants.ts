@@ -13,12 +13,9 @@ export const POS_OPTIONS: Array<{ label: string; value: Word['pos'] | 'ALL' }> =
   { label: 'Adjectives', value: 'Adj' },
   { label: 'Adverbs', value: 'Adv' },
   { label: 'Pronouns', value: 'Pron' },
-  { label: 'Determiners', value: 'Det' },
   { label: 'Prepositions', value: 'Präp' },
   { label: 'Conjunctions', value: 'Konj' },
-  { label: 'Numbers', value: 'Num' },
   { label: 'Particles', value: 'Part' },
-  { label: 'Interjections', value: 'Interj' },
 ];
 
 export const LEVEL_OPTIONS = ['All', 'A1', 'A2', 'B1', 'B2'] as const;

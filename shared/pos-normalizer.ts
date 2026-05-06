@@ -7,26 +7,20 @@ export const LEGACY_PARTS_OF_SPEECH: readonly PartOfSpeech[] = [
   'Adj',
   'Adv',
   'Pron',
-  'Det',
   'Pr\u00e4p',
   'Konj',
-  'Num',
   'Part',
-  'Interj',
 ];
 
 export const LEXEME_PARTS_OF_SPEECH: readonly LexemePos[] = [
-  'verb',
-  'noun',
-  'adjective',
-  'adverb',
-  'pronoun',
-  'determiner',
-  'preposition',
-  'conjunction',
-  'numeral',
-  'particle',
-  'interjection',
+  'V',
+  'N',
+  'Adj',
+  'Adv',
+  'Pron',
+  'Pr\u00e4p',
+  'Konj',
+  'Part',
 ];
 
 const legacyAliasMap: Record<string, PartOfSpeech> = {
@@ -51,10 +45,11 @@ const legacyAliasMap: Record<string, PartOfSpeech> = {
   pron: 'Pron',
   pronoun: 'Pron',
   pronomen: 'Pron',
-  det: 'Det',
-  determiner: 'Det',
-  art: 'Det',
-  artikel: 'Det',
+  det: 'Pron',
+  determiner: 'Pron',
+  art: 'Pron',
+  article: 'Pron',
+  artikel: 'Pron',
   prep: 'Pr\u00e4p',
   adp: 'Pr\u00e4p',
   praep: 'Pr\u00e4p',
@@ -71,32 +66,29 @@ const legacyAliasMap: Record<string, PartOfSpeech> = {
   konjunktion: 'Konj',
   cconj: 'Konj',
   sconj: 'Konj',
-  num: 'Num',
-  numeral: 'Num',
-  numerale: 'Num',
-  zahlwort: 'Num',
+  num: 'Adj',
+  numeral: 'Adj',
+  numerale: 'Adj',
+  zahlwort: 'Adj',
   part: 'Part',
   particle: 'Part',
   partikel: 'Part',
-  int: 'Interj',
-  intj: 'Interj',
-  interj: 'Interj',
-  interjection: 'Interj',
-  interjektion: 'Interj',
+  int: 'Part',
+  intj: 'Part',
+  interj: 'Part',
+  interjection: 'Part',
+  interjektion: 'Part',
 };
 
 const lexemeByLegacyPos: Record<PartOfSpeech, LexemePos> = {
-  V: 'verb',
-  N: 'noun',
-  Adj: 'adjective',
-  Adv: 'adverb',
-  Pron: 'pronoun',
-  Det: 'determiner',
-  'Pr\u00e4p': 'preposition',
-  Konj: 'conjunction',
-  Num: 'numeral',
-  Part: 'particle',
-  Interj: 'interjection',
+  V: 'V',
+  N: 'N',
+  Adj: 'Adj',
+  Adv: 'Adv',
+  Pron: 'Pron',
+  'Pr\u00e4p': 'Pr\u00e4p',
+  Konj: 'Konj',
+  Part: 'Part',
 };
 
 function normalisePosKey(value: unknown): string | null {
@@ -121,15 +113,6 @@ export function normaliseLegacyPartOfSpeech(value: unknown): PartOfSpeech | null
 }
 
 export function normaliseLexemePartOfSpeech(value: unknown): LexemePos | null {
-  const key = normalisePosKey(value);
-  if (!key) {
-    return null;
-  }
-
-  if ((LEXEME_PARTS_OF_SPEECH as readonly string[]).includes(key)) {
-    return key as LexemePos;
-  }
-
   const legacy = normaliseLegacyPartOfSpeech(value);
   return legacy ? lexemeByLegacyPos[legacy] : null;
 }

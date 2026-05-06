@@ -247,7 +247,7 @@ describe('Wortschatz page', () => {
           taskId: 'word_1',
           lexemeId: 'word_1',
           taskType: 'vocabulary_drill',
-          pos: 'noun',
+          pos: 'N',
           renderer: 'word_card',
           result: 'correct',
           submittedResponse: { selfAssessment: 'known' },

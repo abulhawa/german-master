@@ -9,11 +9,11 @@ import type { CEFRLevel, LexemePos } from '@shared';
 
 const resolveLevelForPos = (pos: LexemePos): CEFRLevel => {
   switch (pos) {
-    case 'verb':
+    case 'V':
       return 'A1';
-    case 'noun':
+    case 'N':
       return 'A2';
-    case 'adjective':
+    case 'Adj':
       return 'B1';
     default:
       return 'A1';

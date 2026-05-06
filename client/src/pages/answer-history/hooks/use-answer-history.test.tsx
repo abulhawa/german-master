@@ -41,7 +41,7 @@ function createHistoryEntry(id: string, answeredAt: string): AnsweredQuestion {
     taskId: `task-${id}`,
     lexemeId: `lexeme-${id}`,
     taskType: "conjugate_form",
-    pos: "verb",
+    pos: "V",
     renderer: "conjugate-form",
     result: "correct",
     submittedResponse: "ging",
@@ -55,7 +55,7 @@ function createHistoryEntry(id: string, answeredAt: string): AnsweredQuestion {
     lexeme: {
       id: `lexeme-${id}`,
       lemma: "gehen",
-      pos: "verb",
+      pos: "V",
       level: "A1",
     },
   };

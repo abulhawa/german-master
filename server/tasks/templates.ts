@@ -55,21 +55,18 @@ interface TaskTemplateDefinition {
 }
 
 const VOCABULARY_SUPPORTED_POS = new Set<LexemePos>([
-  'verb',
-  'noun',
-  'adjective',
-  'adverb',
-  'pronoun',
-  'determiner',
-  'preposition',
-  'conjunction',
-  'numeral',
-  'particle',
-  'interjection',
+  'V',
+  'N',
+  'Adj',
+  'Adv',
+  'Pron',
+  'Präp',
+  'Konj',
+  'Part',
 ]);
 
 const TASK_TEMPLATE_REGISTRY: Partial<Record<LexemePos, readonly TaskTemplateDefinition[]>> = {
-  verb: [
+  V: [
     {
       key: 'praesens_ich',
       taskType: 'conjugate_form',
@@ -162,7 +159,7 @@ const TASK_TEMPLATE_REGISTRY: Partial<Record<LexemePos, readonly TaskTemplateDef
       }),
     },
   ],
-  noun: [
+  N: [
     {
       key: 'accusative_plural',
       taskType: 'noun_case_declension',
@@ -186,7 +183,7 @@ const TASK_TEMPLATE_REGISTRY: Partial<Record<LexemePos, readonly TaskTemplateDef
       }),
     },
   ],
-  adjective: [
+  Adj: [
     {
       key: 'comparative',
       taskType: 'adj_ending',

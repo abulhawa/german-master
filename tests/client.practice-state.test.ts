@@ -44,12 +44,12 @@ const practiceTask: PracticeTask = {
   taskId: 'task-1',
   lexemeId: 'lex-1',
   taskType: 'conjugate_form',
-  pos: 'verb',
+  pos: 'V',
   renderer: 'conjugate_form',
   interactionMode: 'typed',
   prompt: {
     lemma: 'gehen',
-    pos: 'verb',
+    pos: 'V',
     requestedForm: { tense: 'participle' },
     instructions: 'Partizip II angeben',
   },
@@ -64,12 +64,12 @@ const practiceTaskTwo: PracticeTask = {
   taskId: 'task-2',
   lexemeId: 'lex-2',
   taskType: 'conjugate_form',
-  pos: 'verb',
+  pos: 'V',
   renderer: 'conjugate_form',
   interactionMode: 'typed',
   prompt: {
     lemma: 'kommen',
-    pos: 'verb',
+    pos: 'V',
     requestedForm: { tense: 'present', person: '3s' },
     instructions: 'Präsens er/sie/es angeben',
   },
@@ -84,7 +84,7 @@ const queueItem: PracticeTaskQueueItem = {
   taskId: 'task-1',
   lexemeId: 'lex-1',
   taskType: 'conjugate_form',
-  pos: 'verb',
+  pos: 'V',
   renderer: 'conjugate_form',
   source: 'review',
   enqueuedAt: new Date().toISOString(),
@@ -209,7 +209,7 @@ describe('practice state migrations', () => {
     localStorage.setItem('settings', JSON.stringify(legacySettings));
 
     const settings = loadPracticeSettings();
-    expect(settings.cefrLevelByPos.verb).toBe('B1');
+    expect(settings.cefrLevelByPos.V).toBe('B1');
     expect(settings.rendererPreferences.conjugate_form.showHints).toBe(false);
     expect(settings.b2ExamMode).toBe(false);
     expect(localStorage.getItem('practice.settings.migrated')).toBe('1');
@@ -234,7 +234,7 @@ describe('practice state migrations', () => {
 
   it('updates settings helpers', () => {
     let settings = createDefaultSettings();
-    settings = updateCefrLevel(settings, { pos: 'verb', level: 'B2' });
+    settings = updateCefrLevel(settings, { pos: 'V', level: 'B2' });
     settings = updatePreferredTaskTypes(settings, ['conjugate_form']);
     settings = updateRendererPreferences(settings, {
       taskType: 'conjugate_form',
@@ -244,7 +244,7 @@ describe('practice state migrations', () => {
 
     savePracticeSettings(settings);
     const loaded = loadPracticeSettings();
-    expect(loaded.cefrLevelByPos.verb).toBe('B2');
+    expect(loaded.cefrLevelByPos.V).toBe('B2');
     expect(loaded.rendererPreferences.conjugate_form.showHints).toBe(false);
     expect(loaded.b2ExamMode).toBe(true);
   });

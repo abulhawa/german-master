@@ -68,7 +68,6 @@ const VALIDATORS: Record<PartOfSpeech, PosValidator> = {
     return result;
   },
   Pron: baseValidation,
-  Det: baseValidation,
   Präp: (word) => {
     const result = baseValidation(word);
     const cases = word.posAttributes?.preposition?.cases ?? [];
@@ -77,9 +76,7 @@ const VALIDATORS: Record<PartOfSpeech, PosValidator> = {
     return result;
   },
   Konj: baseValidation,
-  Num: baseValidation,
   Part: baseValidation,
-  Interj: baseValidation,
 };
 
 export function validateWord(word: AggregatedWord): PosValidationResult {

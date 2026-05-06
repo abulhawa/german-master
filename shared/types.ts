@@ -12,12 +12,9 @@ export type PartOfSpeech =
   | 'Adj'
   | 'Adv'
   | 'Pron'
-  | 'Det'
   | 'Präp'
   | 'Konj'
-  | 'Num'
-  | 'Part'
-  | 'Interj';
+  | 'Part';
 
 export interface WordTranslation {
   value: string;

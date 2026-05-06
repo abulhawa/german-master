@@ -583,7 +583,7 @@ describe('tasks API', () => {
         'identity:noun:projekt:vocabulary_drill',
         'identity:noun:projekt',
         'Projekt',
-        'noun',
+        'N',
         'vocabulary_drill',
         'word_card',
         deviceId,
@@ -609,14 +609,14 @@ describe('tasks API', () => {
     expect(history[0]).toMatchObject({
       taskId: 'identity:noun:projekt:vocabulary_drill',
       lexemeId: 'identity:noun:projekt',
-      pos: 'noun',
+      pos: 'N',
       taskType: 'vocabulary_drill',
       promptSummary: 'Projekt - vocabulary',
     });
     expect(history[0].lexeme).toMatchObject({
       id: 'identity:noun:projekt',
       lemma: 'Projekt',
-      pos: 'noun',
+      pos: 'N',
     });
   });
 

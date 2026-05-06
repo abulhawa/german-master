@@ -56,19 +56,19 @@ describe('wortschatz API', () => {
       {
         id: 'de:noun:projekt:11111111',
         lemma: 'Projekt',
-        pos: 'noun',
+        pos: 'N',
         metadata: { level: 'B2', collections: [B2_BERUF_COLLECTION] },
       },
       {
         id: 'de:verb:bewerben:22222222',
         lemma: 'bewerben',
-        pos: 'verb',
+        pos: 'V',
         metadata: { level: 'B2', collections: [B2_BERUF_COLLECTION] },
       },
       {
         id: 'de:noun:haus:33333333',
         lemma: 'Haus',
-        pos: 'noun',
+        pos: 'N',
         metadata: { level: 'A1', collections: [] },
       },
     ]);

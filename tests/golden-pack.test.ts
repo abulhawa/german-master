@@ -102,7 +102,7 @@ describe('buildTaskInventory', () => {
     expect(vocabularyTasks.every((task) => !task.id.startsWith('word_'))).toBe(true);
 
     const verbTasks = firstRun.tasks.filter(
-      (task) => task.pos === 'verb' && task.taskType !== 'vocabulary_drill',
+      (task) => task.pos === 'V' && task.taskType !== 'vocabulary_drill',
     );
     expect(verbTasks).toHaveLength(4);
     const requestedForms = verbTasks.map((task) => (task.prompt as any).requestedForm?.tense);
@@ -111,14 +111,14 @@ describe('buildTaskInventory', () => {
     expect(requestedPersons).toEqual([1, 3, 3, null]);
 
     const nounTasks = firstRun.tasks.filter(
-      (task) => task.pos === 'noun' && task.taskType !== 'vocabulary_drill',
+      (task) => task.pos === 'N' && task.taskType !== 'vocabulary_drill',
     );
     expect(nounTasks).toHaveLength(1);
     expect((nounTasks[0]?.prompt as any).requestedCase).toBe('accusative');
     expect((nounTasks[0]?.prompt as any).requestedNumber).toBe('plural');
 
     const adjectiveTasks = firstRun.tasks.filter(
-      (task) => task.pos === 'adjective' && task.taskType !== 'vocabulary_drill',
+      (task) => task.pos === 'Adj' && task.taskType !== 'vocabulary_drill',
     );
     expect(adjectiveTasks).toHaveLength(2);
     expect(adjectiveTasks.map((task) => (task.prompt as any).degree)).toEqual([

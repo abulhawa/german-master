@@ -35,7 +35,7 @@ export const wordSchema = z.object({
   exportUid: z.string().uuid(),
   exportedAt: z.coerce.date().nullable(),
   lemma: z.string(),
-  pos: z.enum(['V', 'N', 'Adj', 'Adv', 'Pron', 'Det', 'Präp', 'Konj', 'Num', 'Part', 'Interj']),
+  pos: z.enum(['Präp', 'Pron', 'V', 'Adv', 'N', 'Konj', 'Adj', 'Part']),
   level: z.string().nullable(),
   english: z.string().nullable(),
   exampleDe: z.string().nullable(),

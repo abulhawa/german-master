@@ -70,7 +70,7 @@ describe('seed persistence', () => {
       complete: true,
       translations: null,
       examples: null,
-      posAttributes: { pos: 'verb', tags: ['core'] },
+      posAttributes: { pos: 'V', tags: ['core'] },
       enrichmentAppliedAt: null,
       enrichmentMethod: null,
     },

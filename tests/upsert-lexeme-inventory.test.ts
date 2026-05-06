@@ -49,7 +49,7 @@ describe('upsertLexemeInventory', () => {
         id: 'legacy:de:verb:gehen',
         lemma: 'gehen',
         language: 'de',
-        pos: 'verb',
+        pos: 'V',
         gender: null,
         metadata: {} as Record<string, unknown>,
         frequencyRank: null,
@@ -66,7 +66,7 @@ describe('upsertLexemeInventory', () => {
       expect(rows).toHaveLength(1);
       expect(rows[0]?.id).toBe(expectedId);
       expect(rows[0]?.lemma).toBe('gehen');
-      expect(rows[0]?.pos).toBe('verb');
+      expect(rows[0]?.pos).toBe('V');
     } finally {
       await context.cleanup();
     }
@@ -115,7 +115,7 @@ describe('upsertLexemeInventory', () => {
         id: `lex:${index}`,
         lemma: `Wort ${index}`,
         language: 'de',
-        pos: 'noun' as const,
+        pos: 'N' as const,
         gender: 'das',
         metadata: {},
         frequencyRank: null,

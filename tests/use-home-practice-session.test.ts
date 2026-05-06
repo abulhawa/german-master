@@ -9,10 +9,10 @@ interface RawTaskPayload {
   taskId: string;
   taskType: 'conjugate_form';
   renderer: 'conjugate_form';
-  pos: 'verb';
+  pos: 'V';
   prompt: {
     lemma: string;
-    pos: 'verb';
+    pos: 'V';
     requestedForm: {
       tense: 'present';
       person: number;
@@ -36,10 +36,10 @@ function createRawTask(index: number): RawTaskPayload {
     taskId: `task-${index}`,
     taskType: 'conjugate_form',
     renderer: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     prompt: {
       lemma: `verb-${index}`,
-      pos: 'verb',
+      pos: 'V',
       requestedForm: {
         tense: 'present',
         person: 1,

@@ -9,12 +9,9 @@ export type ExternalPartOfSpeech =
   | 'Adj'
   | 'Adv'
   | 'Pron'
-  | 'Det'
   | 'Präp'
   | 'Konj'
-  | 'Num'
-  | 'Part'
-  | 'Interj';
+  | 'Part';
 
 const SUPPORTED_EXTERNAL_POS: readonly ExternalPartOfSpeech[] = [
   'N',
@@ -22,12 +19,9 @@ const SUPPORTED_EXTERNAL_POS: readonly ExternalPartOfSpeech[] = [
   'Adj',
   'Adv',
   'Pron',
-  'Det',
   'Präp',
   'Konj',
-  'Num',
   'Part',
-  'Interj',
 ] as const;
 
 export interface ExternalWordRow {
@@ -59,9 +53,9 @@ const WORTART_MAP = new Map<string, ExternalPartOfSpeech>([
   ['Adverb', 'Adv'],
   ['Präposition', 'Präp'],
   ['Konjunktion', 'Konj'],
-  ['Artikel', 'Det'],
+  ['Artikel', 'Pron'],
   ['Pronomen', 'Pron'],
-  ['Numerale', 'Num'],
+  ['Numerale', 'Adj'],
   ['Partikel', 'Part'],
 ]);
 

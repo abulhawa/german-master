@@ -9,12 +9,12 @@ function buildTask(taskId: string): PracticeTask<'conjugate_form'> {
     taskId,
     lexemeId: `lex-${taskId}`,
     taskType: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     renderer: 'conjugate_form',
     interactionMode: 'typed',
     prompt: {
       lemma: `lemma-${taskId}`,
-      pos: 'verb',
+      pos: 'V',
       requestedForm: {
         tense: 'present',
         mood: 'indicative',

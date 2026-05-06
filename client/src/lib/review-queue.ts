@@ -55,7 +55,7 @@ function createLegacyQueueEntry(item: LegacyQueueItem): PracticeTaskQueueItem {
     taskId,
     lexemeId: taskId,
     taskType: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     renderer: 'conjugate_form',
     source: 'review',
     enqueuedAt: item.enqueuedAt,

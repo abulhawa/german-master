@@ -11,7 +11,7 @@ const DEFAULT_COPY: TaskCopy = {
   label: 'Task',
   description: 'Practice task',
   posLabel: 'Task',
-  pos: 'verb',
+  pos: 'V',
 };
 
 export const TASK_TYPE_COPY: Record<TaskType, TaskCopy> = {
@@ -19,31 +19,31 @@ export const TASK_TYPE_COPY: Record<TaskType, TaskCopy> = {
     label: 'Verb conjugation',
     description: 'Strengthen your verb conjugation skills.',
     posLabel: 'Verbs',
-    pos: 'verb',
+    pos: 'V',
   },
   noun_case_declension: {
     label: 'Noun declension',
     description: 'Build confidence with noun case endings.',
     posLabel: 'Nouns',
-    pos: 'noun',
+    pos: 'N',
   },
   adj_ending: {
     label: 'Adjective endings',
     description: 'Master comparative adjective endings.',
     posLabel: 'Adjectives',
-    pos: 'adjective',
+    pos: 'Adj',
   },
   b2_writing_prompt: {
     label: 'B2 writing prompt',
     description: 'Practice formal B2 responses with guided key phrases.',
     posLabel: 'B2 writing',
-    pos: 'verb',
+    pos: 'V',
   },
   vocabulary_drill: {
     label: 'Wortschatz',
     description: 'Review vocabulary with a self-graded flashcard.',
     posLabel: 'Wortschatz',
-    pos: 'noun',
+    pos: 'N',
   },
 };
 

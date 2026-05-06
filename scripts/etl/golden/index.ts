@@ -1,5 +1,5 @@
 import type { PartOfSpeech } from '@shared';
-import { mapLegacyPartOfSpeechToLexeme } from '@shared/pos-normalizer';
+import { normaliseLegacyPartOfSpeech } from '@shared/pos-normalizer';
 import { type LexemePos } from '@shared/task-registry';
 import { B2_BERUF_COLLECTION } from '@shared/content-sources';
 
@@ -141,7 +141,7 @@ function createLexemeSeed(word: AggregatedWord, lexemeId: string): LexemeSeed {
     lemma: word.lemma,
     language: 'de',
     pos,
-    gender: pos === 'noun' ? word.gender ?? null : null,
+    gender: pos === 'N' ? word.gender ?? null : null,
     metadata: cleanedMetadata,
     frequencyRank: null,
     sourceIds: collectSources(word),
@@ -151,7 +151,7 @@ function createLexemeSeed(word: AggregatedWord, lexemeId: string): LexemeSeed {
 function createLexemeIdResolver(words: AggregatedWord[]): (word: AggregatedWord) => string {
   const entries = words.map((word) => {
     const base = createLexemeIdParts(word);
-    const exactKey = `${base.pos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
+    const exactKey = `${base.idPos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
     return { word, baseKey: base.hashInput, exactKey };
   });
   const exactKeysByBase = new Map<string, Set<string>>();
@@ -174,28 +174,31 @@ function createLexemeIdResolver(words: AggregatedWord[]): (word: AggregatedWord)
 
   return (word) => {
     const base = createLexemeIdParts(word);
-    const exactKey = `${base.pos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
+    const exactKey = `${base.idPos}:${word.lemma.normalize('NFKC').toLocaleLowerCase('de')}:${base.primarySource}`;
     const disambiguator = disambiguators.get(`${base.hashInput}\0${exactKey}`);
     const hashInput = disambiguator ? `${base.hashInput}:${disambiguator}` : base.hashInput;
     const idHash = sha1(hashInput);
-    return `de:${base.pos}:${base.lemmaSlug}:${idHash.slice(0, 8)}`;
+    return `de:${base.idPos}:${base.lemmaSlug}:${idHash.slice(0, 8)}`;
   };
 }
 
 function createLexemeIdParts(word: AggregatedWord): {
   pos: LexemePos;
+  idPos: string;
   lemmaSlug: string;
   primarySource: string;
   hashInput: string;
 } {
   const pos = mapPos(word.pos);
+  const idPos = stableLexemeIdPosSegment(pos);
   const lemmaSlug = normaliseLemma(word.lemma);
   const primarySource = primarySourceId(word);
   return {
     pos,
+    idPos,
     lemmaSlug,
     primarySource,
-    hashInput: `${pos}:${lemmaSlug}:${primarySource}`,
+    hashInput: `${idPos}:${lemmaSlug}:${primarySource}`,
   };
 }
 
@@ -204,7 +207,7 @@ function createInflectionsForWord(word: AggregatedWord, lexemeId: string): Infle
   const base: InflectionSeed[] = [];
   const sourceRevision = deriveSourceRevision(word);
 
-  if (pos === 'verb') {
+  if (pos === 'V') {
     base.push(
       ...createInflectionEntries(
         lexemeId,
@@ -247,7 +250,7 @@ function createInflectionsForWord(word: AggregatedWord, lexemeId: string): Infle
         sourceRevision,
       ),
     );
-  } else if (pos === 'noun') {
+  } else if (pos === 'N') {
     base.push(
       ...createInflectionEntries(
         lexemeId,
@@ -266,7 +269,7 @@ function createInflectionsForWord(word: AggregatedWord, lexemeId: string): Infle
         sourceRevision,
       ),
     );
-  } else if (pos === 'adjective') {
+  } else if (pos === 'Adj') {
     base.push(
       ...createInflectionEntries(
         lexemeId,
@@ -291,7 +294,7 @@ function createInflectionsForWord(word: AggregatedWord, lexemeId: string): Infle
         sourceRevision,
       ),
     );
-  } else if (pos === 'adverb') {
+  } else if (pos === 'Adv') {
     base.push(
       ...createInflectionEntries(
         lexemeId,
@@ -316,7 +319,7 @@ function createInflectionsForWord(word: AggregatedWord, lexemeId: string): Infle
         sourceRevision,
       ),
     );
-  } else if (pos === 'preposition') {
+  } else if (pos === 'Präp') {
     const governedCases = word.posAttributes?.preposition?.cases ?? null;
     base.push(
       ...createInflectionEntries(
@@ -365,7 +368,7 @@ function createTaskSourceFromWord(word: AggregatedWord, lexemeId: string): TaskT
     english: word.english ?? null,
     exampleDe: word.exampleDe ?? null,
     exampleEn: word.exampleEn ?? null,
-    gender: pos === 'noun' ? word.gender ?? null : null,
+    gender: pos === 'N' ? word.gender ?? null : null,
     plural: word.plural ?? null,
     separable: typeof word.separable === 'boolean' ? word.separable : null,
     aux: word.aux ?? null,
@@ -467,10 +470,14 @@ function pruneUndefined<T extends Record<string, unknown>>(value: T): T {
 }
 
 function mapPos(pos: PartOfSpeech): LexemePos {
-  const mapped = mapLegacyPartOfSpeechToLexeme(pos);
+  const mapped = normaliseLegacyPartOfSpeech(pos);
   if (mapped) {
     return mapped;
   }
+  throw new Error(`Unsupported part of speech in task inventory: ${pos}`);
+}
+
+function stableLexemeIdPosSegment(pos: LexemePos): string {
   switch (pos) {
     case 'V':
       return 'verb';
@@ -482,20 +489,12 @@ function mapPos(pos: PartOfSpeech): LexemePos {
       return 'adverb';
     case 'Pron':
       return 'pronoun';
-    case 'Det':
-      return 'determiner';
     case 'Präp':
       return 'preposition';
     case 'Konj':
       return 'conjunction';
-    case 'Num':
-      return 'numeral';
     case 'Part':
       return 'particle';
-    case 'Interj':
-      return 'interjection';
-    default:
-      throw new Error(`Unsupported part of speech in task inventory: ${pos}`);
   }
 }
 

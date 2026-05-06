@@ -101,6 +101,63 @@ function handleCustomStatements(statement: string, mem: IMemoryDb): QueryResult<
   return undefined;
 }
 
+function parseJsonPath(path: string | null | undefined): string[] {
+  if (!path) {
+    return [];
+  }
+
+  const trimmed = String(path).trim();
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return [trimmed];
+  }
+
+  return trimmed
+    .slice(1, -1)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function cloneJsonValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  return JSON.parse(JSON.stringify(value));
+}
+
+function jsonbSet(target: unknown, path: string | null, newValue: unknown, createMissing: boolean | null): unknown {
+  if (target === null || target === undefined || path === null || newValue === null || newValue === undefined) {
+    return null;
+  }
+
+  const segments = parseJsonPath(path);
+  if (segments.length === 0) {
+    return cloneJsonValue(newValue);
+  }
+
+  const root = cloneJsonValue(target);
+  if (typeof root !== 'object' || root === null) {
+    return root;
+  }
+
+  let cursor = root as Record<string, unknown>;
+  for (let index = 0; index < segments.length - 1; index += 1) {
+    const segment = segments[index]!;
+    const next = cursor[segment];
+    if (typeof next !== 'object' || next === null) {
+      if (!createMissing) {
+        return root;
+      }
+      cursor[segment] = {};
+    }
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+
+  cursor[segments[segments.length - 1]!] = cloneJsonValue(newValue);
+  return root;
+}
+
 function wrapQuery(original: Pool['query'], mem: IMemoryDb): Pool['query'] {
   return (function wrapped(configOrText: any, valuesOrCallback?: any, maybeCallback?: any) {
     let values = valuesOrCallback;
@@ -328,6 +385,13 @@ export function createMockPool(): Pool {
       }
       return value.length;
     },
+  });
+  mem.public.registerFunction({
+    name: 'jsonb_set',
+    args: ['jsonb', 'text', 'jsonb', 'bool'],
+    returns: 'jsonb',
+    allowNullArguments: true,
+    implementation: jsonbSet,
   });
   mem.public.registerFunction({
     name: 'jsonb_build_object',

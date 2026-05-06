@@ -21,12 +21,9 @@ export const ALL_WORTSCHATZ_POS: PartOfSpeech[] = [
   'Adj',
   'Adv',
   'Pron',
-  'Det',
   'Präp',
   'Konj',
-  'Num',
   'Part',
-  'Interj',
 ];
 
 export interface WortschatzStorageState {

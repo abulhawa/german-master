@@ -10,12 +10,9 @@ const partOfSpeechSchema = z.enum([
   'Adj',
   'Adv',
   'Pron',
-  'Det',
   'Präp',
   'Konj',
-  'Num',
   'Part',
-  'Interj',
 ]);
 
 const wortschatzWordSchema = z.object({

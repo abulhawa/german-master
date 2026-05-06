@@ -156,7 +156,7 @@ describe('seedDatabase', () => {
       await context.db.insert(lexemes).values({
         id: sentinelLexemeId,
         lemma: 'sentinel',
-        pos: 'verb',
+        pos: 'V',
         metadata: {},
         sourceIds: [],
       });

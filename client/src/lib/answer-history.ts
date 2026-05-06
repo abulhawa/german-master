@@ -99,7 +99,7 @@ function toLexemeSnapshotFromVerb(
   return {
     id: `legacy:verb:${verb.infinitive}`,
     lemma: verb.infinitive,
-    pos: 'verb',
+    pos: 'V',
     level,
     english: verb.english,
     example: verb.präteritumExample
@@ -190,7 +190,7 @@ export function createLegacyAnswerHistoryEntry(options: LegacyAnswerHistoryEntry
     taskId: legacyId,
     lexemeId: legacyId,
     taskType: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     renderer: clientTaskRegistry.conjugate_form.renderer,
     result: options.result,
     submittedResponse: options.attemptedAnswer,

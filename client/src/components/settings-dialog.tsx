@@ -109,7 +109,7 @@ export function SettingsDialog({
   };
 
   const cefrLevel =
-    settings.cefrLevelByPos.verb ?? settings.legacyVerbLevel ?? 'A1';
+    settings.cefrLevelByPos.V ?? settings.legacyVerbLevel ?? 'A1';
 
   const taskCopy = getTaskTypeCopy(taskType);
 
@@ -124,7 +124,7 @@ export function SettingsDialog({
   const daysUntilExam = computeDaysUntil(B2_EXAM_DATE);
 
   const handleLevelChange = (level: CEFRLevel) => {
-    const next = updateCefrLevel(settings, { pos: 'verb', level });
+    const next = updateCefrLevel(settings, { pos: 'V', level });
 
     onSettingsChange(next);
   };

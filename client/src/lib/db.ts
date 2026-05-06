@@ -90,7 +90,7 @@ function convertLegacyAttempt(payload: PracticeAttemptPayload): TaskAttemptPaylo
     taskId: legacyId,
     lexemeId: legacyId,
     taskType: 'conjugate_form',
-    pos: 'verb',
+    pos: 'V',
     renderer: 'conjugate_form',
     result: payload.result,
     submittedResponse: payload.attemptedAnswer,

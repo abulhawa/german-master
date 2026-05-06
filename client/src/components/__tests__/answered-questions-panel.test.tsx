@@ -13,7 +13,7 @@ function createB2BerufEntry(): AnsweredQuestion {
     taskId: "task-b2-beruf",
     lexemeId: "lexeme-b2-beruf",
     taskType: "vocabulary_drill",
-    pos: "noun",
+    pos: "N",
     renderer: "word_card",
     result: "correct",
     submittedResponse: { selfAssessment: "known" },
@@ -28,7 +28,7 @@ function createB2BerufEntry(): AnsweredQuestion {
     lexeme: {
       id: "lexeme-b2-beruf",
       lemma: "Arbeitsvertrag",
-      pos: "noun",
+      pos: "N",
       level: "B2",
       collections: [B2_BERUF_COLLECTION],
       english: "employment contract",

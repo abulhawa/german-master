@@ -5,7 +5,7 @@ import { isRecord } from "../shared.js";
 
 const partOfSpeechSchema = z.preprocess(
   (value) => normaliseLegacyPartOfSpeech(value) ?? value,
-  z.enum(["V", "N", "Adj", "Adv", "Pron", "Det", "Pr\u00e4p", "Konj", "Num", "Part", "Interj"]),
+  z.enum(["Pr\u00e4p", "Pron", "V", "Adv", "N", "Konj", "Adj", "Part"]),
 );
 
 const optionalText = (max: number) =>
