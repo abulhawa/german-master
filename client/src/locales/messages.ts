@@ -292,7 +292,7 @@ export interface WortschatzMessages {
   list: {
     emptyTitle: string;
     emptyDescription: string;
-    sectionCount: string;
+    wordCount: PluralizedMessage;
     pronunciationLabel: string;
     examplePronunciationLabel: string;
     translationLabel: string;
@@ -559,8 +559,11 @@ const MESSAGES: Record<Locale, AppMessages> = {
       },
       list: {
         emptyTitle: 'No vocabulary matches these filters',
-        emptyDescription: 'Adjust the search query or reset the part-of-speech filters to show more entries.',
-        sectionCount: '{count} entries',
+        emptyDescription: 'Adjust the search query or reset the part-of-speech filters to show more words.',
+        wordCount: {
+          singular: '{count} word',
+          plural: '{count} words',
+        },
         pronunciationLabel: 'Pronounce',
         examplePronunciationLabel: 'Pronounce example',
         translationLabel: 'English',
@@ -1021,8 +1024,11 @@ const MESSAGES: Record<Locale, AppMessages> = {
       },
       list: {
         emptyTitle: 'Kein Wortschatz passt zu diesen Filtern',
-        emptyDescription: 'Passe die Suche an oder setze die Wortart-Filter zurück, um mehr Einträge zu sehen.',
-        sectionCount: '{count} Einträge',
+        emptyDescription: 'Passe die Suche an oder setze die Wortart-Filter zurück, um mehr Wörter zu sehen.',
+        wordCount: {
+          singular: '{count} Wort',
+          plural: '{count} Wörter',
+        },
         pronunciationLabel: 'Aussprechen',
         examplePronunciationLabel: 'Beispiel aussprechen',
         translationLabel: 'Englisch',

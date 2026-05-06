@@ -329,6 +329,10 @@ export default function WortschatzPage() {
     selectedLevels,
     effectiveSelectedPos,
   );
+  const filteredWordCountLabel = formatTemplate(
+    filteredWords.length === 1 ? copy.list.wordCount.singular : copy.list.wordCount.plural,
+    { count: String(filteredWords.length) },
+  );
   const wordsById = new Map(words.map((word) => [word.id, word] as const));
   const groupedWords = groupWordsByPos(filteredWords);
   const wordHistoryById = historySummaryQuery.data?.byWordId ?? {};
@@ -965,6 +969,14 @@ export default function WortschatzPage() {
               <TabsContent value="list" className="mt-5 space-y-5">
                 {wortschatzQuery.isLoading ? renderLoading() : null}
                 {wortschatzQuery.error ? renderError() : null}
+                {!wortschatzQuery.isLoading && !wortschatzQuery.error ? (
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <h2 className="text-base font-semibold text-foreground">{copy.tabs.list}</h2>
+                    <Badge variant="outline" className="rounded-full px-3 py-1">
+                      {filteredWordCountLabel}
+                    </Badge>
+                  </div>
+                ) : null}
                 {!wortschatzQuery.isLoading && !wortschatzQuery.error && filteredWords.length === 0 ? (
                   <Card className="rounded-3xl border border-border/60 bg-card/80 shadow-soft shadow-primary/5">
                     <CardHeader>
@@ -978,17 +990,14 @@ export default function WortschatzPage() {
                     {availablePos
                       .filter((pos) => groupedWords.has(pos))
                       .map((pos) => {
-                        const entries = groupedWords.get(pos) ?? [];
+                        const sectionWords = groupedWords.get(pos) ?? [];
                         return (
                           <section key={pos} className="space-y-2">
-                            <div className="flex items-center justify-between gap-3 px-1">
-                              <h2 className="text-base font-semibold text-foreground">{copy.posLabels[pos]}</h2>
-                              <Badge variant="outline" className="rounded-full px-3 py-1">
-                                {formatTemplate(copy.list.sectionCount, { count: String(entries.length) })}
-                              </Badge>
+                            <div className="px-1">
+                              <h3 className="text-base font-semibold text-foreground">{copy.posLabels[pos]}</h3>
                             </div>
                             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/80">
-                              {entries.map((word) => (
+                              {sectionWords.map((word) => (
                                 <article
                                   key={word.id}
                                   className="grid gap-3 border-b border-border/60 p-4 last:border-b-0 md:grid-cols-[minmax(0,1fr)_minmax(180px,260px)]"

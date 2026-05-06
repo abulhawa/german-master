@@ -172,12 +172,15 @@ describe('Wortschatz page', () => {
     await user.click(await screen.findByRole('tab', { name: 'Wortliste' }));
 
     expect(await screen.findByText('der Arbeitsvertrag')).toBeInTheDocument();
+    expect(screen.getByText('3 words')).toBeInTheDocument();
+    expect(screen.queryByText(/entries/i)).not.toBeInTheDocument();
     expect(screen.queryByText('das Haus')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Filters' }));
     await user.click(screen.getAllByRole('button', { name: 'All' })[0]!);
 
     expect(await screen.findByText('das Haus')).toBeInTheDocument();
+    expect(screen.getByText('4 words')).toBeInTheDocument();
 
     await user.click(await screen.findByRole('button', { name: 'Verbs' }));
 
@@ -185,6 +188,7 @@ describe('Wortschatz page', () => {
     await user.type(searchInput, 'timeline');
 
     expect(await screen.findByText('das Projekt')).toBeInTheDocument();
+    expect(screen.getByText('1 word')).toBeInTheDocument();
     expect(screen.queryByText(/bewerben/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Arbeitsvertrag/)).not.toBeInTheDocument();
   });
