@@ -29,8 +29,8 @@ describe('Supabase auth URL helpers', () => {
     const redirectOrigin = getSupabaseAuthRedirectOrigin(new URL('http://localhost:3000/wortschatz'));
     const redirectUrl = getSupabaseAuthRedirectUrl(new URL('http://localhost:3000/wortschatz?code=secret'));
 
-    expect(redirectOrigin).toBe('https://gvm.qortxai.com');
-    expect(redirectUrl).toBe('https://gvm.qortxai.com/wortschatz');
+    expect(redirectOrigin).toBe('https://germanmaster.qortxai.com');
+    expect(redirectUrl).toBe('https://germanmaster.qortxai.com/wortschatz');
   });
 
   it('removes Supabase token fragments without changing the app route path', () => {

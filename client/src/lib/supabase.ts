@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-const PRODUCTION_AUTH_SITE_URL = 'https://gvm.qortxai.com';
+const PRODUCTION_AUTH_SITE_URL = 'https://germanmaster.qortxai.com';
 const SENSITIVE_AUTH_HASH_PARAMS = ['access_token', 'refresh_token', 'provider_token', 'provider_refresh_token'];
 
 let client: SupabaseClient | null = null;
