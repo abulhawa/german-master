@@ -26,6 +26,7 @@ describe("favicon configuration", () => {
 
 describe("search indexing metadata", () => {
   const publicDir = path.resolve(__dirname, "..", "client", "public");
+  const clientDir = path.resolve(__dirname, "..", "client");
   const canonicalOrigin = "https://germanmaster.qortxai.com";
 
   it("ships a sitemap with canonical public URLs", () => {
@@ -47,5 +48,24 @@ describe("search indexing metadata", () => {
     expect(robots).toContain("Allow: /");
     expect(robots).toContain(`Sitemap: ${canonicalOrigin}/sitemap.xml`);
     expect(robots).not.toContain("germanverbmaster.com");
+  });
+
+  it("defines canonical and social metadata for public pages", () => {
+    const pages = [
+      { file: path.join(clientDir, "index.html"), url: `${canonicalOrigin}/` },
+      { file: path.join(publicDir, "privacy.html"), url: `${canonicalOrigin}/privacy` },
+      { file: path.join(publicDir, "delete-account.html"), url: `${canonicalOrigin}/delete-account` },
+    ];
+
+    for (const page of pages) {
+      const html = readFileSync(page.file, "utf8");
+
+      expect(html).toContain(`<link rel="canonical" href="${page.url}"`);
+      expect(html).toContain(`property="og:url" content="${page.url}"`);
+      expect(html).toContain('property="og:site_name" content="German Master"');
+      expect(html).toContain('property="og:image" content="https://germanmaster.qortxai.com/icons/icon-512.png"');
+      expect(html).toContain('name="twitter:card" content="summary"');
+      expect(html).not.toContain("germanverbmaster.com");
+    }
   });
 });
