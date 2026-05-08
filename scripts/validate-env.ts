@@ -142,7 +142,7 @@ function validateResendConfiguration(): ValidationResult[] {
   if (!fromEmail) {
     addResult(results, "warning", "RESEND_FROM_EMAIL is unset. Production email will fall back to onboarding@resend.dev; configure a verified sender.");
   } else if (!/^[^@]+@[^@]+\.[^@]+$/.test(fromEmail)) {
-    addResult(results, "error", "RESEND_FROM_EMAIL must be a valid email address (e.g. German Verb Master <no-reply@example.com>).");
+    addResult(results, "error", "RESEND_FROM_EMAIL must be a valid email address (e.g. German Master <no-reply@example.com>).");
   }
 
   return results;
