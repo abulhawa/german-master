@@ -37,7 +37,7 @@ function resolveResendConstructor(): ResendConstructor {
 const ResendClass: ResendConstructor = resolveResendConstructor();
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL?.trim() || "German Verb Master <onboarding@resend.dev>";
+const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL?.trim() || "German Master <onboarding@resend.dev>";
 
 let cachedResend: ResendModule.Resend | null = null;
 
@@ -83,11 +83,11 @@ interface SendVerificationEmailOptions {
 }
 
 export async function sendVerificationEmail(to: string, options: SendVerificationEmailOptions): Promise<void> {
-  const subject = "Verify your German Verb Master account";
+  const subject = "Verify your German Master account";
   const safeName = options.name ? escapeHtml(options.name) : undefined;
-  const greeting = safeName ? `Hi ${safeName},` : "Welcome to German Verb Master!";
+  const greeting = safeName ? `Hi ${safeName},` : "Welcome to German Master!";
   const text = [
-    options.name ? `Hi ${options.name},` : "Welcome to German Verb Master!",
+    options.name ? `Hi ${options.name},` : "Welcome to German Master!",
     "",
     "Please confirm your email address to finish setting up your account.",
     `Verification link: ${options.url}`,
@@ -120,12 +120,12 @@ interface SendPasswordResetEmailOptions {
 }
 
 export async function sendPasswordResetEmail(to: string, options: SendPasswordResetEmailOptions): Promise<void> {
-  const subject = "Reset your German Verb Master password";
+  const subject = "Reset your German Master password";
   const safeName = options.name ? escapeHtml(options.name) : undefined;
   const greeting = safeName ? `Hi ${safeName},` : "Hello,";
   const text = [
     options.name ? `Hi ${options.name},` : "Hello,",
-    "We received a request to reset your German Verb Master password.",
+    "We received a request to reset your German Master password.",
     "",
     `Reset link: ${options.url}`,
     "",
@@ -136,7 +136,7 @@ export async function sendPasswordResetEmail(to: string, options: SendPasswordRe
 
   const html = `
     <p>${greeting}</p>
-    <p>We received a request to reset your German Verb Master password.</p>
+    <p>We received a request to reset your German Master password.</p>
     <p><a href="${options.url}">Reset my password</a></p>
     <p>Reset code: <code>${options.token}</code></p>
     <p>If you didn't request a password reset, you can safely ignore this email.</p>

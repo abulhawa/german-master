@@ -1,15 +1,18 @@
-# GermanVerbMaster
+# German Master
 
-GermanVerbMaster is a full-stack, lexeme-centric practice platform for German learners. It ships with a multi-part-of-speech task registry covering verbs, nouns, and adjectives, a React-based client that renders tasks by `taskType`, and an Express API backed by Drizzle ORM. The app can be installed as a Progressive Web App and works fully offline thanks to deterministic task packs seeded at build time.
+German Master is a full-stack, lexeme-centric practice platform for German learners. It ships with a multi-part-of-speech task registry covering verbs, nouns, and adjectives, a React-based client that renders tasks by `taskType`, and an Express API backed by Drizzle ORM. The app can be installed as a Progressive Web App and works fully offline thanks to deterministic task packs seeded at build time.
 
 ## Local setup
+
 Requires Node.js 22.0.0 or newer and npm 10+ (see `package.json` engines field).
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 2. (Optional) Copy `.env.example` to `.env` and override the defaults. You can change:
+
    - `DATABASE_URL` – Postgres connection string (e.g. Supabase or local `postgres://` URL).
    - `DATABASE_SSL` / `PGSSLMODE` – set to `disable` when connecting to a local instance without TLS.
    - `APP_ORIGIN` – a comma-separated allow list used for CORS. Required in production; development falls back to localhost origins when unset.
@@ -19,22 +22,27 @@ Requires Node.js 22.0.0 or newer and npm 10+ (see `package.json` engines field).
    - `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` – optional credentials for Microsoft OAuth sign-in.
    - `ENABLE_LEXEME_SCHEMA` – disable to fall back to the legacy verb-only stack (defaults to `true`).
 3. Apply the latest migrations to your Postgres database:
+
    ```bash
    npm run db:push
    ```
 4. Seed the content tables and regenerate deterministic task packs used by the offline cache:
+
    ```bash
    npm run seed
    ```
 5. Start the development server (Express API + Vite dev server):
+
    ```bash
    npm run dev
    npm run dev:client # start only the Vite dev server on port 5000 for UI smoke tests
    ```
+
    When `DATABASE_URL` is unset the `npm run dev` script now enables an in-memory Postgres mock. The server applies the latest
    Drizzle migrations and seeds a small enrichment fixture so admin screens and task APIs are reachable without provisioning a
    real database. Set `USE_DEV_DB_MOCK=0` to opt out when you want to exercise a live Postgres instance locally.
 6. Additional scripts:
+
    ```bash
    npm run check      # type-check the project
    npm run build      # create production bundles and server output
@@ -60,7 +68,7 @@ Before running `npm run db:push` or `npm run seed` in any managed environment, s
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` – Supabase project used by the server to verify web auth tokens.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` – the same Supabase project exposed to the browser for Supabase Auth.
 - `RESEND_API_KEY` – Resend production API key used to deliver verification and password reset emails.
-- `RESEND_FROM_EMAIL` – verified sender (e.g. `German Verb Master <no-reply@example.com>`). Defaults to Resend's sandbox sender when omitted.
+- `RESEND_FROM_EMAIL` – verified sender (e.g. `German Master <no-reply@example.com>`). Defaults to Resend's sandbox sender when omitted.
 - Google OAuth is configured in Supabase Auth; use the same Supabase project as Android so web Google login resolves to the same Supabase user ID and preserves practice history.
 - `MICROSOFT_CLIENT_ID` / `MICROSOFT_CLIENT_SECRET` – optional Microsoft OAuth credentials.
 - `ENABLE_ADMIN_FEATURES` – toggles admin-only APIs and the `/admin` dashboard (defaults to `true` outside production, `false` in production).
@@ -129,22 +137,26 @@ Shut down the container with `docker stop gvm-postgres` when you are done.
 4. Deploy the build and smoke-test `/api/tasks`.
 
 ## Theme system
+
 - Global color tokens live in `client/src/index.css`. Light and dark palettes share the same variable names (`--bg`, `--fg`, `--accent`, etc.), so components only reference semantic utilities such as `bg-card`, `text-fg`, and `ring-accent`.
 - Accent usage is intentionally small: primary buttons, selected states, focus rings, and toggled controls. Most surfaces rely on muted neutrals for both themes.
 - The header now includes a theme toggle that persists the selection (`light`, `dark`, or `system`) in `localStorage` and respects the system preference when `system` is active. The helper logic lives in `client/src/lib/theme.ts`.
 
 ## Lexeme-based task system
+
 - `/api/tasks` exposes POS-aware task descriptors driven by the shared registry in `shared/task-registry.ts` and server metadata in `server/tasks/registry.ts`.
 - Legacy verb routes have been removed. Clients should rely on `/api/tasks` for fetching practice prompts and `/api/submission` for recording attempts.
 - The deterministic schema covers `lexemes`, `inflections`, `task_specs`, and `practice_history`. These tables live alongside legacy verb tables until shadow mode validates parity.
 
 ## Progressive Web App
+
 - The client is bundled with `vite-plugin-pwa` using an auto-updating service worker.
 - `client/public/manifest.webmanifest` defines install metadata, icons, and standalone display mode.
 - Runtime caching keeps `/api/tasks` responses available offline so the most recent prompts persist between sessions without bundling static packs.
 - A `virtual:pwa-register` hook registers the service worker on load; the app earns an 80+ Lighthouse PWA score when built.
 
 ## Offline + Sync
+
 - Task data is fetched from `/api/tasks` when online and cached by the service worker for offline reuse.
 - Practice attempts are written to an IndexedDB queue (via Dexie) whenever the network is unavailable or the API is rate limited.
 - The `useSyncQueue` hook listens to `online` and `visibilitychange` events and flushes queued attempts back to `POST /api/submission`.
@@ -153,11 +165,13 @@ Shut down the container with `docker stop gvm-postgres` when you are done.
 - Legacy aggregated CSVs now live under `data/legacy/` for historical reference. The new seeding pipeline reads the POS-specific files directly and regenerates task specs in Postgres on every `npm run seed`.
 
 ## Database utilities
+
 - The schema is managed with Drizzle + Postgres. After editing `db/schema.ts`, run `npm run db:push` to apply migrations using the configured `DATABASE_URL`.
 - `npm run seed` recomputes completeness, writes deterministic task specs through the template registry, and idempotently upserts source material into Postgres. Run the seed after editing any `data/pos/*.jsonl` file or adjusting enrichment snapshots under `data/enrichment/`.
 - The seeding pipeline synchronises the shared `lexemes`/`inflections` tables for every part of speech and records aggregated attribution metadata alongside each task so CC BY-SA contributors are always credited.
 
 ## Vocabulary enrichment helpers
+
 - Run `npm run enrich` to execute the enrichment pipeline. By default it inspects incomplete entries (`ONLY_INCOMPLETE=true`), queries Kaikki's Wiktextract dataset, OpenThesaurus, MyMemory, Tatoeba, and optionally OpenAI (`ENABLE_AI=true`) for missing metadata, and writes a structured report under `data/generated/enrichment/`. Set `APPLY_UPDATES=true` to upsert the suggested `english`/example values back into Postgres after taking a JSON backup (`data/generated/backups/words-backup-*.json`). Use `COLLECT_WIKTEXTRACT=false` to disable the Wiktextract integration when debugging network behaviour.
 - Wiktextract responses now flow into `words.pos_attributes`: governed cases, Kaikki usage notes, and POS-level tags (e.g. _separable_, _transitive_, _two-way preposition_) are merged with any existing metadata so noun/adjective/preposition cohorts accumulate the descriptors needed for the multi-POS rollout.
 - Every provider snapshot is also persisted under `data/enrichment/<pos>/<provider>.json` so Kaikki/Wiktextract, MyMemory, Tatoeba, OpenThesaurus, and OpenAI responses remain source-of-truth across schema changes. The seeding script loads these files and replays their translations, examples, verb forms, and enrichment metadata back into Postgres to keep approved words intact. When `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ENRICHMENT_SUPABASE_BUCKET` are configured the same payloads are uploaded to Supabase Storage for off-site backups.
@@ -167,11 +181,13 @@ Shut down the container with `docker stop gvm-postgres` when you are done.
 - Use `tsx scripts/enrich-pending-words.ts` for quick exports to `data/generated/pending-approval-enrichment.json` without mutating the database.
 
 ## Lexeme & content admin tools
+
 - When admin tooling is enabled, configure an `ADMIN_API_TOKEN` in your `.env` file (see `.env.example`) to protect ingestion routes. Restart the dev server after changing environment variables.
 - Visit `http://localhost:5000/admin` to access the words dashboard. Multi-select filters now support verbs, nouns, adjectives, and CEFR levels for quick targeting.
 - Updates are issued via `PATCH /api/words/:id` with the `x-admin-token` header. Approval toggles and field edits immediately invalidate the admin cache and prompt the next `npm run seed` to refresh lexeme rows, inflections, and task specs.
 
 ## Task delivery
+
 - Practice tasks are served directly from `task_specs` using the latest content updates; no device-level Leitner state is required.
 - Submissions written to `/api/submission` are stored in `practice_history` alongside minimal metadata so analytics can be layered on later if needed.
 
@@ -196,4 +212,3 @@ SESSION_SECRET=super-secret-hmac-key
   Sign in with Microsoft
 </button>
 ```
-

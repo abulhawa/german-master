@@ -1,11 +1,11 @@
 {
-  "name": "German Verb Master",
-  "short_name": "VerbMaster",
+  "name": "German Master",
+  "short_name": "German bMaster",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111827",
   "theme_color": "#2563eb",
-  "description": "Practice German verbs anywhere with offline support and smart sync.",
+  "description": "Practice German vocabulary anywhere with offline support and smart sync.",
   "icons": [
     {
       "src": "/icons/icon-192.png",
