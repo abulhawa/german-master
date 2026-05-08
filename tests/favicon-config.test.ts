@@ -23,3 +23,29 @@ describe("favicon configuration", () => {
     expect(statSync(faviconPath).size).toBeGreaterThan(0);
   });
 });
+
+describe("search indexing metadata", () => {
+  const publicDir = path.resolve(__dirname, "..", "client", "public");
+  const canonicalOrigin = "https://germanmaster.qortxai.com";
+
+  it("ships a sitemap with canonical public URLs", () => {
+    const sitemapPath = path.join(publicDir, "sitemap.xml");
+    const sitemap = readFileSync(sitemapPath, "utf8");
+
+    expect(sitemap).toContain('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
+    expect(sitemap).toContain(`<loc>${canonicalOrigin}/</loc>`);
+    expect(sitemap).toContain(`<loc>${canonicalOrigin}/privacy</loc>`);
+    expect(sitemap).toContain(`<loc>${canonicalOrigin}/delete-account</loc>`);
+    expect(sitemap).not.toContain("germanverbmaster.com");
+  });
+
+  it("points crawlers at the sitemap from robots.txt", () => {
+    const robotsPath = path.join(publicDir, "robots.txt");
+    const robots = readFileSync(robotsPath, "utf8");
+
+    expect(robots).toContain("User-agent: *");
+    expect(robots).toContain("Allow: /");
+    expect(robots).toContain(`Sitemap: ${canonicalOrigin}/sitemap.xml`);
+    expect(robots).not.toContain("germanverbmaster.com");
+  });
+});
