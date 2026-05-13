@@ -24,6 +24,34 @@ afterAll(() => {
 });
 
 describe('applyMigrations', () => {
+  it('keeps Supabase Data API grants explicit for current public tables', async () => {
+    const migration = await readFile(
+      resolve(process.cwd(), 'migrations/0016_explicit_supabase_data_api_grants.sql'),
+      'utf8',
+    );
+
+    expect(migration).toContain("data_api_roles text[] := ARRAY['anon', 'authenticated', 'service_role']");
+    expect(migration).toContain('GRANT USAGE ON SCHEMA public');
+    expect(migration).toContain('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.%I');
+    expect(migration).toContain('GRANT USAGE, SELECT ON SEQUENCE public.%I');
+
+    for (const tableName of [
+      'words',
+      'lexemes',
+      'inflections',
+      'task_specs',
+      'task_sync_state',
+      'practice_history',
+      'practice_log',
+    ]) {
+      expect(migration).toContain(`'${tableName}'`);
+    }
+
+    for (const sequenceName of ['words_id_seq', 'practice_history_id_seq', 'practice_log_id_seq']) {
+      expect(migration).toContain(`'${sequenceName}'`);
+    }
+  });
+
   it('creates the expected tables and indexes in a fresh database', async () => {
     const pool = createMockPool();
 

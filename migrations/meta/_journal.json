@@ -113,6 +113,13 @@
       "when": 1760647463783,
       "tag": "0015_compact_pos_values",
       "breakpoints": false
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1760647464783,
+      "tag": "0016_explicit_supabase_data_api_grants",
+      "breakpoints": false
     }
   ]
 }
