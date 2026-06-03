@@ -32,9 +32,13 @@ async function listen(server: ReturnType<typeof createServer>): Promise<AddressI
 describe('resolveAllowedOrigins', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalAppOrigin = process.env.APP_ORIGIN;
+  const originalCodespaceName = process.env.CODESPACE_NAME;
+  const originalCodespacesForwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
 
   beforeEach(() => {
     delete process.env.APP_ORIGIN;
+    delete process.env.CODESPACE_NAME;
+    delete process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
     process.env.NODE_ENV = 'test';
   });
 
@@ -48,6 +52,16 @@ describe('resolveAllowedOrigins', () => {
       delete process.env.APP_ORIGIN;
     } else {
       process.env.APP_ORIGIN = originalAppOrigin;
+    }
+    if (originalCodespaceName === undefined) {
+      delete process.env.CODESPACE_NAME;
+    } else {
+      process.env.CODESPACE_NAME = originalCodespaceName;
+    }
+    if (originalCodespacesForwardingDomain === undefined) {
+      delete process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
+    } else {
+      process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = originalCodespacesForwardingDomain;
     }
   });
 
@@ -79,6 +93,17 @@ describe('resolveAllowedOrigins', () => {
       'http://127.0.0.1:5000',
       'http://localhost:5000',
     ]);
+  });
+
+  it('includes forwarded Codespaces origins outside production when Codespaces env is present', () => {
+    process.env.CODESPACE_NAME = 'laughing-potato-abc123';
+    process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = 'app.github.dev';
+
+    const allowed = resolveAllowedOrigins();
+
+    expect(allowed).toContain('https://laughing-potato-abc123-5000.app.github.dev');
+    expect(allowed).toContain('https://laughing-potato-abc123-5173.app.github.dev');
+    expect(allowed).toContain('https://laughing-potato-abc123-4173.app.github.dev');
   });
 });
 

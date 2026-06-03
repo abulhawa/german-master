@@ -9,6 +9,8 @@ const DEVELOPMENT_FALLBACK_ORIGINS = [
   "http://localhost:5000",
 ] as const;
 
+const DEVELOPMENT_PORTS = [4173, 5173, 5000] as const;
+
 type NodeEnvironment = "development" | "production" | (string & {});
 
 function determineNodeEnvironment(): NodeEnvironment {
@@ -25,6 +27,17 @@ function parseOriginList(value?: string | readonly string[]): string[] {
   return source
     .map((origin: string) => origin.trim())
     .filter(Boolean);
+}
+
+function resolveCodespacesOrigins(): string[] {
+  const codespaceName = process.env.CODESPACE_NAME?.trim();
+  const forwardingDomain = process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN?.trim();
+
+  if (!codespaceName || !forwardingDomain) {
+    return [];
+  }
+
+  return DEVELOPMENT_PORTS.map((port) => `https://${codespaceName}-${port}.${forwardingDomain}`);
 }
 
 export interface ResolveAllowedOriginsOptions {
@@ -52,7 +65,7 @@ export function resolveAllowedOrigins(options: ResolveAllowedOriginsOptions = {}
     );
   }
 
-  return [...DEVELOPMENT_FALLBACK_ORIGINS];
+  return Array.from(new Set([...DEVELOPMENT_FALLBACK_ORIGINS, ...resolveCodespacesOrigins()]));
 }
 
 export function buildCorsOptions(allowedOrigins: readonly string[]): CorsOptions {
