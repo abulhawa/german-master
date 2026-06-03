@@ -27,7 +27,7 @@ This guide helps new contributors ramp onto the lexeme-based architecture that n
 4. `/api/tasks` serves queue items directly from `task_specs`, returning the latest prompts without maintaining scheduler state.
 
 ## 4. QA checklist before merging
-- Run `npm run test` for unit/integration coverage and `npm run test:e2e` after Playwright browsers are installed.
+- Run `npm run test` for unit/integration coverage.
 - Run `npm run seed` after updating ETL scripts to confirm the generated lexeme inventories still hydrate without errors, then run `npm run build:tasks` to refresh `task_specs`.
 - Verify admin dashboard edits propagate into the generated lexeme/task spec snapshots by reseeding, rebuilding tasks, and spot-checking the refreshed database rows via `/api/tasks`.
 - Confirm `/api/tasks?pos=noun` and `/api/tasks?pos=adjective` return items for seeded datasets.

@@ -48,8 +48,7 @@ Requires Node.js 22.0.0 or newer and npm 10+ (see `package.json` engines field).
    npm run build      # create production bundles and server output
    npm run validate:env # ensure production env vars are present before building
    npm run test:unit  # run unit and integration tests with Vitest
-   npm run test:e2e   # execute Playwright end-to-end tests (browsers required)
-   npm run test:all   # run unit tests followed by Playwright end-to-end coverage
+   npm run test:all   # run all Vitest checks
    npm run packs:lint # validate generated content packs against the task registry
    npm run db:reset   # drop all Postgres objects and clear generated data (preserves data/pos)
    ```

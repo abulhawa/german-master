@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +51,63 @@ function applyMigrations(mem: IMemoryDb): void {
   }
 }
 
+function parseJsonPath(path: string | null | undefined): string[] {
+  if (!path) {
+    return [];
+  }
+
+  const trimmed = String(path).trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+    return [trimmed];
+  }
+
+  return trimmed
+    .slice(1, -1)
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function cloneJsonValue(value: unknown): unknown {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  return JSON.parse(JSON.stringify(value));
+}
+
+function jsonbSet(target: unknown, path: string | null, newValue: unknown, createMissing: boolean | null): unknown {
+  if (target === null || target === undefined || path === null || newValue === null || newValue === undefined) {
+    return null;
+  }
+
+  const segments = parseJsonPath(path);
+  if (segments.length === 0) {
+    return cloneJsonValue(newValue);
+  }
+
+  const root = cloneJsonValue(target);
+  if (typeof root !== "object" || root === null) {
+    return root;
+  }
+
+  let cursor = root as Record<string, unknown>;
+  for (let index = 0; index < segments.length - 1; index += 1) {
+    const segment = segments[index]!;
+    const next = cursor[segment];
+    if (typeof next !== "object" || next === null) {
+      if (!createMissing) {
+        return root;
+      }
+      cursor[segment] = {};
+    }
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+
+  cursor[segments[segments.length - 1]!] = cloneJsonValue(newValue);
+  return root;
+}
+
 function ensureDatabase(mem: IMemoryDb): void {
   mem.public.none("create schema if not exists drizzle");
   mem.public.registerFunction({
@@ -97,6 +154,24 @@ function ensureDatabase(mem: IMemoryDb): void {
     },
   } as any);
   mem.public.registerFunction({
+    name: "split_part",
+    args: ["text", "text", "int4"],
+    returns: "text",
+    allowNullArguments: true,
+    implementation: (input: string | null, delimiter: string | null, field: number | null) => {
+      if (input === null || input === undefined || delimiter === null || delimiter === undefined || field === null) {
+        return null;
+      }
+
+      const index = Number(field);
+      if (!Number.isFinite(index) || index <= 0) {
+        return "";
+      }
+
+      return String(input).split(String(delimiter))[index - 1] ?? "";
+    },
+  } as any);
+  mem.public.registerFunction({
     name: "substr",
     args: ["text", "int4", "int4"],
     returns: "text",
@@ -115,6 +190,77 @@ function ensureDatabase(mem: IMemoryDb): void {
       const text = input ?? "";
       const from = Math.max((Number(start) || 1) - 1, 0);
       return text.substring(from);
+    },
+  } as any);
+  mem.public.registerFunction({
+    name: "md5",
+    args: ["text"],
+    returns: "text",
+    implementation: (input: string) => createHash("md5").update(input ?? "").digest("hex"),
+  } as any);
+  mem.public.registerFunction({
+    name: "jsonb_array_length",
+    args: ["jsonb"],
+    returns: "int4",
+    implementation: (value: unknown) => {
+      if (!Array.isArray(value)) {
+        throw new Error("cannot get array length of a scalar");
+      }
+      return value.length;
+    },
+  } as any);
+  mem.public.registerFunction({
+    name: "jsonb_set",
+    args: ["jsonb", "text", "jsonb", "bool"],
+    returns: "jsonb",
+    allowNullArguments: true,
+    implementation: jsonbSet,
+  } as any);
+  mem.public.registerFunction({
+    name: "jsonb_build_object",
+    args: ["text", "text", "text", "text", "text", "text"],
+    returns: "jsonb",
+    allowNullArguments: true,
+    implementation: (...values: unknown[]) => {
+      const object: Record<string, unknown> = {};
+      for (let index = 0; index < values.length; index += 2) {
+        const key = values[index];
+        if (typeof key === "string") {
+          object[key] = values[index + 1] ?? null;
+        }
+      }
+      return object;
+    },
+  } as any);
+  mem.public.registerFunction({
+    name: "jsonb_build_object",
+    args: [
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+      "text",
+    ],
+    returns: "jsonb",
+    allowNullArguments: true,
+    implementation: (...values: unknown[]) => {
+      const object: Record<string, unknown> = {};
+      for (let index = 0; index < values.length; index += 2) {
+        const key = values[index];
+        if (typeof key === "string") {
+          object[key] = values[index + 1] ?? null;
+        }
+      }
+      return object;
     },
   } as any);
 }

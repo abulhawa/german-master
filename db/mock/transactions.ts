@@ -107,7 +107,7 @@ export function sanitizeSql(text: string): string[] {
   return normalized
     .split(/;(?=(?:[^']*'[^']*')*[^']*$)/)
     .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+    .filter((statement) => statement.replace(/^\s*--.*$/gm, "").trim().length > 0);
 }
 
 export function createEmptyResult(): QueryResult<any> {
