@@ -113,7 +113,7 @@
     "fake-indexeddb": "^6.2.4",
     "jsdom": "^29.1.1",
     "pg-mem": "^3.0.5",
-    "postcss": "^8.5.12",
+    "postcss": "^8.5.25",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.4",
     "typescript": "6.0.3",
