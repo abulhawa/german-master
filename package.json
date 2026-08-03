@@ -123,11 +123,11 @@
   },
   "overrides": {
     "@esbuild-kit/core-utils@3.3.2": {
-      "esbuild": "0.28.0"
+      "esbuild": "0.28.1"
     },
     "@esbuild-kit/esm-loader@2.6.5": {
       "@esbuild-kit/core-utils": {
-        "esbuild": "0.28.0"
+        "esbuild": "0.28.1"
       }
     },
     "serialize-javascript": "^7.0.5",
