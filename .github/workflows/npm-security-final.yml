@@ -24,7 +24,7 @@ jobs:
           node-version: 22
 
       - name: Refresh direct dependencies within current majors
-        run: npx --yes npm-check-updates@latest --target minor -u
+        run: npx --yes npm-check-updates@latest --target minor -u --reject @vitejs/plugin-react
 
       - name: Refresh lockfile
         run: npm install --package-lock-only
