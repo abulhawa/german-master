@@ -17,7 +17,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "main": true
+      "main": true,
+      "npm-security-batch": false
     }
   }
 }
