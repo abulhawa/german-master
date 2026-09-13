@@ -1,4 +1,4 @@
-name: Verify npm security batch
+name: Refresh npm dependencies
 
 on:
   push:
@@ -6,29 +6,34 @@ on:
       - npm-security-batch
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  verify:
+  refresh-and-verify:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: npm-security-batch
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Apply final non-breaking audit fix
+      - name: Refresh direct dependencies within current majors
+        run: npx --yes npm-check-updates@latest --target minor -u
+
+      - name: Refresh lockfile
+        run: npm install --package-lock-only
+
+      - name: Apply non-breaking security fixes
         run: npm audit fix --package-lock-only
 
       - name: Install exact resolved dependency tree
         run: npm ci
-
-      - name: Capture audit report
-        if: always()
-        run: npm audit --json > audit.json || true
 
       - name: Require clean npm audit
         run: npm audit
@@ -42,17 +47,17 @@ jobs:
       - name: Production-equivalent bundle build
         run: npx vite build && node scripts/build-server.js
 
-      - name: Record security dependency versions
-        if: always()
-        run: npm ls brace-expansion fast-uri undici qs ip-address browserslist baseline-browser-mapping csv-parse nanoid vitest > dependency-versions.txt || true
+      - name: Show dependency changes
+        run: git diff -- package.json package-lock.json
 
-      - name: Upload verification outputs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-security-final-clean
-          retention-days: 1
-          path: |
-            package-lock.json
-            audit.json
-            dependency-versions.txt
+      - name: Commit verified dependency refresh
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: refresh npm dependencies [skip ci]"
+          git push origin HEAD:npm-security-batch
