@@ -1,0 +1,58 @@
+name: Verify npm security batch
+
+on:
+  push:
+    branches:
+      - npm-security-batch
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Update remaining vulnerable transitive dependency
+        run: npm update brace-expansion --package-lock-only
+
+      - name: Install exact resolved dependency tree
+        run: npm ci
+
+      - name: Capture audit report
+        if: always()
+        run: npm audit --json > audit.json || true
+
+      - name: Require clean npm audit
+        run: npm audit
+
+      - name: Type check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production-equivalent bundle build
+        run: npx vite build && node scripts/build-server.js
+
+      - name: Record security dependency versions
+        if: always()
+        run: npm ls brace-expansion fast-uri undici qs ip-address browserslist baseline-browser-mapping csv-parse nanoid vitest > dependency-versions.txt || true
+
+      - name: Upload verification outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-security-final
+          retention-days: 1
+          path: |
+            package-lock.json
+            audit.json
+            dependency-versions.txt
