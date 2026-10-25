@@ -1,5 +1,10 @@
 # German Master
 
+> [!IMPORTANT]
+> This repository is archived and retained for historical reference only.
+> Active development has moved to [German Master 2.0](https://github.com/abulhawa/german-master-2).
+> Do not open new work or make product changes here.
+
 German Master is a full-stack, lexeme-centric practice platform for German learners. It ships with a multi-part-of-speech task registry covering verbs, nouns, and adjectives, a React-based client that renders tasks by `taskType`, and an Express API backed by Drizzle ORM. The app can be installed as a Progressive Web App and works fully offline thanks to deterministic task packs seeded at build time.
 
 ## Local setup
